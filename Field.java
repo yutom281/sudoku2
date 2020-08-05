@@ -1,6 +1,7 @@
 package sudoku;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Field {
 	private ArrayList<Box> field;
@@ -82,12 +83,24 @@ public class Field {
 	}
 
 	/**
-	 * 探索アルゴリズム（制約充足問題）を使用して解答します。
+	 * 探索アルゴリズムを使用して解答します。
 	 */
 	void solver() {
-		//ArrayList<Box> sortedField = sortByPossiblesSize();
-		// comparatorを実装してソートする
-		//sortedField.forEach(box -> box.solver());
+		Collections.sort(field, new BoxSort());
+
+		Box rootbox = field.get(0);
+		String message = rootbox.solver();
+		if(message == "solved") {
+			break;
+		}
+		if(message == "contradicted") {
+
+
+		}
+		if(message == "stopped") {
+
+		}
+
 	}
 
 	/**

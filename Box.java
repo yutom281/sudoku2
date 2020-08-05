@@ -69,7 +69,7 @@ public class Box {
 	}
 
 	/**
-	 * 探索アルゴリズム（制約充足問題）を使用して解答します。
+	 * 探索アルゴリズムを使用して解答します。
 	 *
 	 * 配置できる数の少ないマスから処理する。
 	 * 配置前にこのBoxインスタンスと全フィールドのコピーを作成する。「参照渡し」ではなく別インスタンスを生成することに注意。
@@ -82,16 +82,41 @@ public class Box {
 	 *     Areaの20マスの中から、候補の数が最も少ないマスを次に選んでsolver()を実行する。
 	 *     次のマスのすべての候補で「矛盾」が発生した場合、二次コピーを復元してこのBoxに戻り、３つめのBoxでsolver()を実行する
 	 *
-	 *
 	 *「矛盾」：配置できる数が配置前に0になる。
 	 *「元に戻す」：answer = 0 にする。Area内の20マスのanswer, Possiblesを復元する。これを「基準点」に到達するまで繰り返す
 	 *「基準点」：コピーを作成した、「候補の数のうち一つを配置し」た時点。
 	 */
-	/*
+
 	 void solver(){
 
+		ArrayList<Box> log = new ArrayList<>();
+
+		log.addAll(areaHorizontal.copy());
+		log.addAll(areaVertical.copy());
+		log.addAll(areaSquare.copy());
+
+		for(int possibleNum: possibles.get()){
+			answer = possibleNum;
+			areaHorizontal.update(answer);
+			areaVertical.update(answer);
+			areaSquare.update(answer);
+
+			if() {
+
+			}
+
+			if(矛盾が生じた場合) {
+
+
+				continue;
+			}
+			if() {
+
+			}
+		}
+
+
 	 }
-	 */
 
 	/**
 	 * 自身のコピーを作成します。

@@ -41,6 +41,16 @@ public class Area {
 		return this.numbers;
 	}
 
+	ArrayList<Box> copy() {
+		ArrayList<Box> copyArea = new ArrayList<>();
+		area.forEach(box -> {
+			Box boxCopy = box.copy();
+			copyArea.add(boxCopy);
+		});
+		return copyArea;
+	}
+
+
 	// N国同盟（ダブル数字）を計算する
 	ArrayList<Integer> calc() {
 		Map<String, Integer> possiblesMap = new HashMap<>();
