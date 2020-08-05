@@ -17,14 +17,11 @@ public class SudokuAugust {
 
 			field.run();
 
-			field.debug();
-
 		}
+
 		while(field.check()) {
 
-			field.backlog();
-
-			// 探索アルゴリズム
+			field.solver();
 
 			field.debug();
 
