@@ -1,7 +1,6 @@
 package sudoku;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 public class Field {
 	private ArrayList<Box> field;
@@ -84,12 +83,24 @@ public class Field {
 
 	/**
 	 * 探索アルゴリズムを使用して解答します。
+	 * 管理インスタンスと実行インスタンスを設定する。
+	 * 実行側はbacklogから選択する
+	 *
+	 * 管理側は実行側（Box）の配置できる数と現在の仮解答、さらに仮解答前の状態（backlog）を把握する
+	 * 実行側は仮解答にもとづき、Areaに属する20マスを更新し、解答を継続する。
+	 * このとき、実行側はAreaの20マスを複製して解答する。復元するときはこの複製を削除する。
+	 * １）仮解答が誤りだった場合、管理側は配置できる数から仮解答を削除し、★
+	 * ２）再び継続不可となった場合、Fieldを管理者として再度solverを実行する（backlogはインスタンス変数のListに保存し、復元時はインデックスの新しい順に取り出す）
+	 *
+	 * 	＊管理者がFieldの場合とBoxの場合とで、実行者選択のロジックを分けて記述する。
 	 */
 	void solver() {
 		Collections.sort(field, new BoxSort());
 
 		Box rootbox = field.get(0);
-		String message = rootbox.solver();
+		Map<Integer, String> result = new HashMap<Integer, String>();
+		result.put(rootbox.solver();
+
 		if(message == "solved") {
 			break;
 		}
