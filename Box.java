@@ -87,35 +87,37 @@ public class Box {
 	 *「基準点」：コピーを作成した、「候補の数のうち一つを配置し」た時点。
 	 */
 
-	 void solver(){
+	 String solver(ArrayList<Box> backup, int possibleNum) {
 
-		ArrayList<Box> log = new ArrayList<>();
+		answer = possibleNum;
+		possibles = new Possibles();
+		areaHorizontal.update(possibleNum);
+		areaVertical.update(possibleNum);
+		areaSquare.update(possibleNum);
 
-		log.addAll(areaHorizontal.copy());
-		log.addAll(areaVertical.copy());
-		log.addAll(areaSquare.copy());
+		Field fieldBackup = new Field(backup);
 
-		for(int possibleNum: possibles.get()){
-			answer = possibleNum;
-			areaHorizontal.update(answer);
-			areaVertical.update(answer);
-			areaSquare.update(answer);
+		fieldBackup.run();
+		fieldBackup.run();
 
-			if() {
-
-			}
-
-			if(矛盾が生じた場合) {
+		// 解答が完了した場合
+		if(! fieldBackup.check()) {
+			return "solved";
+		}
+		// 解答不能になった場合
+		if(fieldBackup.check()) {
 
 
-				continue;
-			}
-			if() {
+			return "stopped";
+		}
+		// 矛盾が生じた場合
+		if(fieldBackup.findContradiction()) {
 
-			}
+
+			return "contradicted";
 		}
 
-
+		return "error";
 	 }
 
 	/**
@@ -125,6 +127,18 @@ public class Box {
 	Box copy(){
 		Box replica = new Box(this.hor, this.vert, this.answer);
 		return replica;
+	}
+
+	/**
+	 * Boxインスタンスを比較・判別します。
+	 *
+	 * @return {@code true} 行番号と列番号が同じ場合。
+	 */
+	boolean equals(Box box) {
+		if(hor.equal(box.getHorizontal()) && vert.equal(box.getVertical())) {
+			return true;
+		}
+		return false;
 	}
 
 	// Getter

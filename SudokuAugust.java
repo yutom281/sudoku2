@@ -27,7 +27,6 @@ public class SudokuAugust {
 
 		}
 
-
 		// 出力
 		field.output();
 
