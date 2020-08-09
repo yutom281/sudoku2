@@ -37,13 +37,6 @@ public class Area {
 		});
 	}
 
-	/*
-	// 探索アルゴリズムのバックトラックに使用するコンストラクタ
-	Area(ArrayList<Box> copyArea){
-		area.addAll(copyArea);
-	}
-	*/
-
 	ArrayList<Integer> getNumbers() {
 		return this.numbers;
 	}
@@ -101,16 +94,4 @@ public class Area {
 		}
 		return possibleNums;
 	}
-
-	/*
-	ArrayList<Box> copy() {
-		ArrayList<Box> copyArea = new ArrayList<>();
-		area.forEach(box -> {
-			Box boxCopy = box.copy();
-			copyArea.add(boxCopy);
-		});
-		return copyArea;
-	}
-	*/
-
 }

@@ -28,12 +28,9 @@ public class Possibles {
 		if(! possibleNums.equals(notAnswer)) {
 			possibleNums.removeAll(notAnswer);
 		}
-		//int check = checkAnswer();
-		//return check;
 	}
 
 	int search(ArrayList<Integer> searcher){
-		 //ArrayList<Integer> notContained = new ArrayList<>();
 		 for(int number: possibleNums) {
 			 if(! searcher.contains(number)) {
 				 return number;
@@ -66,14 +63,4 @@ public class Possibles {
 	ArrayList<Integer> get(){
 		return possibleNums;
 	}
-/*
-	 int search(ArrayList<Integer> searcher){
-		 for(int number: possibleNums) {
-			 if(! searcher.contains(number)) {
-				 return number;
-			 }
-		 }
-		 return 0;
-	}
-	*/
 }

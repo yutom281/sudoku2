@@ -42,27 +42,11 @@ public class Box {
 		this.field = field;
 	}
 
-	/* 配置できる数を取り除く→チェック→解答→更新
-	 * （ここで解答できるようになっても、最初の処理が終わるまで保留する）
-	 * →解答→更新→1周目終了→保留分を実行
-	 * remove, check, update までをマスごとに行う。updateの影響を他のマスにまで広げない。
-	 * 一回の処理では、そのBoxのみ取り扱う。
-	 */
 	/*
-	void calc() {
-		if(answer == 0) {
-			remove(areaHorizontal.calc());
-			remove(areaVertical.calc());
-			remove(areaSquare.calc());
-
-			search(areaHorizontal);
-			search(areaVertical);
-			search(areaSquare);
-
-			update();
-		}
-	}
-	*/
+	 * 解答を計算します。
+	 * 配置できる数を絞り込み、残りひとつになるか、縦／横／ブロック内に自身にしか置けない数があるとき、
+	 * その数を解答します。
+	 */
 	void calc() {
 		if(answer == 0) {
 			remove(areaHorizontal.calc());
@@ -82,7 +66,6 @@ public class Box {
 			answer = areaSquare.search(possibles);
 		}
 		update();
-
 	}
 
 	void remove(ArrayList<Integer> notAnswer) {
@@ -99,30 +82,6 @@ public class Box {
 			possibles = new Possibles();
 		}
 	}
-/*
-	// Possiblesから数を取り除く
-	void remove(ArrayList<Integer> notAnswer) {
-		int check = possibles.remove(notAnswer);
-		if(check != 0) {
-			this.answer = check;
-			areaHorizontal.update(answer);
-			areaVertical.update(answer);
-			areaSquare.update(answer);
-		}
-	}
-	*/
-/*
-	// Possibles のうち、Area 内で自身しか持たない数を探す
-	void search(Area area) {
-		int result = area.search(possibles);
-		if(result != 0) {
-			this.answer = result;
-			areaHorizontal.update(answer);
-			areaVertical.update(answer);
-			areaSquare.update(answer);
-		}
-	}
-	*/
 
 	/**
 	 * 探索アルゴリズムを使用して解答します。
@@ -136,10 +95,7 @@ public class Box {
 	 String solver(ArrayList<Box> backup, int possibleNum) {
 
 		answer = possibleNum;
-		possibles = new Possibles();
-		areaHorizontal.update(possibleNum);
-		areaVertical.update(possibleNum);
-		areaSquare.update(possibleNum);
+		update();
 
 		/*
 		 * Fieldクラス、FieldSolverクラスのメソッドを使用するため、
@@ -163,21 +119,6 @@ public class Box {
 		return "stopped";
 
 	 }
-
-	 /**
-	  * 探索において、仮解答を配置し、配置できる数を0にします。
-	  *
-	  * @param possibleNum 仮解答
-	  */
-	 /*
-	 final void setTmpAnswer(int possibleNum){
-
-		 if(possibles.count() > 1) {
-			 answer = possibleNum;
-			 possibles = new Possibles();
-		 }
-	 }
-	 */
 
 	/**
 	 * 自身のコピーを作成します。
