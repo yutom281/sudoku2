@@ -24,12 +24,22 @@ public class Possibles {
 	/* 引数を配置できる数から取り除く。配置する前に配置できる数がなくなることは
 	 * ありえないので、両者が完全に一致するときは取り除かない
 	 */
-	int remove(ArrayList<Integer> notAnswer){
+	void remove(ArrayList<Integer> notAnswer){
 		if(! possibleNums.equals(notAnswer)) {
 			possibleNums.removeAll(notAnswer);
 		}
-		int check = checkAnswer();
-		return check;
+		//int check = checkAnswer();
+		//return check;
+	}
+
+	int search(ArrayList<Integer> searcher){
+		 //ArrayList<Integer> notContained = new ArrayList<>();
+		 for(int number: possibleNums) {
+			 if(! searcher.contains(number)) {
+				 return number;
+			 }
+		 }
+		 return 0;
 	}
 
 	int checkAnswer(){
@@ -56,13 +66,14 @@ public class Possibles {
 	ArrayList<Integer> get(){
 		return possibleNums;
 	}
-
+/*
 	 int search(ArrayList<Integer> searcher){
-		 for(Integer number: possibleNums) {
+		 for(int number: possibleNums) {
 			 if(! searcher.contains(number)) {
 				 return number;
 			 }
 		 }
 		 return 0;
 	}
+	*/
 }

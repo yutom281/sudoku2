@@ -31,7 +31,10 @@ public class Field {
 	 */
 	void run() {
 		backlog = backlog(field);
-		field.forEach(box -> box.calc());
+		//field.forEach(box -> box.calc());
+		for(Box box: field) {
+			box.calc();
+		}
 	}
 
 	/**
@@ -53,7 +56,7 @@ public class Field {
 	 * 前回の計算結果を保存して、解き方を変更するか判断します。
 	 * 探索でも使用します。
 	 */
-	ArrayList<Box> backlog(ArrayList<Box> boxList) {
+	 static ArrayList<Box> backlog(ArrayList<Box> boxList) {
 		ArrayList<Box> log = new ArrayList<>();
 		boxList.forEach(box -> {
 			Box logBox = box.copy();
@@ -75,7 +78,10 @@ public class Field {
 		ArrayList<Integer> logAnswers = new ArrayList<>();
 
 		field.forEach(box -> currentAnswers.add(box.getAnswer()));
-		backlog.forEach(logbox -> logAnswers.add(logbox.getAnswer()));
+
+		if(backlog != null) {
+			backlog.forEach(logbox -> logAnswers.add(logbox.getAnswer()));
+		}
 
 		String currAns = currentAnswers.toString();
 		String logAns = logAnswers.toString();

@@ -37,10 +37,12 @@ public class Area {
 		});
 	}
 
+	/*
 	// 探索アルゴリズムのバックトラックに使用するコンストラクタ
 	Area(ArrayList<Box> copyArea){
 		area.addAll(copyArea);
 	}
+	*/
 
 	ArrayList<Integer> getNumbers() {
 		return this.numbers;
@@ -77,14 +79,11 @@ public class Area {
 
 	// Area 内の9マスにおいて、うち1マスにしか置けない数がないか探す
 	int search(Possibles possibles) {
-
 		ArrayList<Integer> searcher = new ArrayList<>();
-
 		for(Box box: area) {
 			searcher.addAll(box.getPossibles().get());
 		}
-		int result = possibles.search(searcher);
-		return result;
+		return possibles.search(searcher);
 	}
 
 	void update(int answer) {
@@ -103,6 +102,7 @@ public class Area {
 		return possibleNums;
 	}
 
+	/*
 	ArrayList<Box> copy() {
 		ArrayList<Box> copyArea = new ArrayList<>();
 		area.forEach(box -> {
@@ -111,6 +111,6 @@ public class Area {
 		});
 		return copyArea;
 	}
-
+	*/
 
 }

@@ -2,6 +2,10 @@ package sudoku;
 
 import java.util.Comparator;
 
+/**
+ * マスを、配置できる数が少ない順に並べ替えます。
+ * 配置できる数がない（＝解答済みまたは仮解答中）マスは最後尾に並べます。
+ */
 public class BoxSort implements Comparator<Box> {
 
 	public int compare(Box box1, Box box2) {
@@ -10,14 +14,24 @@ public class BoxSort implements Comparator<Box> {
 		int counter2 = box2.getPossibles().count();
 
 		if(counter1 == 0) {
-			return 10;
+			counter1 = 10;
 		}
 		if(counter2 == 0) {
-			return -10;
+			counter2 = 10;
 		}
-		return counter1 - counter2;
+		if(counter1 > counter2) {
+			return 1;
+		}
+		if(counter1 < counter2) {
+			return -1;
+		}
+		return 0;
 	}
 }
+
+/**
+ * マスを、行番号・列番号順に並べ替えます。
+ */
 class IndexSort implements Comparator<Box> {
 
 	public int compare(Box box1, Box box2) {

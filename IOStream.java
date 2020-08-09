@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -21,7 +22,10 @@ public class IOStream {
 	// 問題を入力するコンストラクタ
 	IOStream(){
 		try {
-			FileInputStream fis=new FileInputStream(new File("C:\\Users\\chiec\\Desktop\\pleiades-2020-03-java-win-64bit-jre_20200322\\pleiades\\workspace\\sudoku\\mondai.xlsx"));
+			Path path = Path.of("mondai.xlsx");
+	        String strPath = path.toAbsolutePath().toString();
+
+			FileInputStream fis=new FileInputStream(new File(strPath));
 			Workbook wb=new XSSFWorkbook(fis);
 			Sheet sht=wb.getSheetAt(0);
 			Iterator<Row> iterator = sht.iterator();
@@ -139,6 +143,62 @@ public class IOStream {
 		}
 	}
 
+
+	 static void solverDebug (ArrayList<Box> log) {
+
+		 try {
+				XSSFWorkbook workbook = new XSSFWorkbook();
+				XSSFSheet sheet = workbook.createSheet("possibles");
+				int index = 0;
+
+				for(int i = 0; i < 9; i++) {
+					Row row = sheet.createRow(i);
+					row.setHeightInPoints(20);
+					for(int j = 0; j < 9; j++) {
+						Box currentBox = log.get(index);
+						sheet.setColumnWidth(i, 1024);
+						Cell cell = row.createCell(j);
+						cell.setCellValue(currentBox.getPossibles().get().toString());
+						index++;
+					}
+				}
+				FileOutputStream outputStream = new FileOutputStream("solDebugPossibles.xlsx");
+				workbook.write(outputStream);
+				workbook.close();
+				outputStream.close();
+
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				XSSFWorkbook workbook = new XSSFWorkbook();
+				XSSFSheet sheet = workbook.createSheet("answers");
+				int index = 0;
+
+				for(int i = 0; i < 9; i++) {
+					Row row = sheet.createRow(i);
+					row.setHeightInPoints(20);
+					for(int j = 0; j < 9; j++) {
+						Box currentBox = log.get(index);
+						sheet.setColumnWidth(i, 1024);
+						Cell cell = row.createCell(j);
+						int answer = currentBox.getAnswer();
+						if(answer != 0) {
+							cell.setCellValue(answer);
+						}
+						index++;
+					}
+				}
+				FileOutputStream outputStream = new FileOutputStream("solDebugAnswers.xlsx");
+				workbook.write(outputStream);
+				workbook.close();
+				outputStream.close();
+
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
+
+	 }
 
 	ArrayList<Box> get(){
 		return this.rawField;

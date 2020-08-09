@@ -10,13 +10,13 @@ public class FieldSolver extends Field {
 	 */
 	public FieldSolver(ArrayList<Box> boxList){
 		this.field = boxList;
-		this.backlog = backlog(this.field);
 	}
 
 	/**
 	 * 探索アルゴリズムを開始します。コンストラクタを呼び出したFieldインスタンスより実行します。
 	 */
 	void solver() {
+		this.backlog = backlog(this.field);
 		solver(this.field, this.backlog);
 	}
 
@@ -70,12 +70,7 @@ public class FieldSolver extends Field {
 			if(message.equals("stopped")) {
 				deepBackup = backlog(backup);
 				replace(deepBackup, rootBox);
-				rootBox.setTmpAnswer(possibleNum);
-				/*
-				 * rootBox は setTmpAnswer() により配置できる数＝0 となっている。
-				 * したがって、この二重探索 solver() 内の BoxSort() によりリストの最後尾に並べられ、
-				 * 二重探索の実行者（ = deepBackup.get(0)）には必ず他のマスが選択される。
-				 */
+
 				String deepMessage = solver(backup, deepBackup);
 
 				/*
@@ -130,21 +125,13 @@ public class FieldSolver extends Field {
 
 	/**
 	 * 探索のバックトラックにおいて、探索を実行中のマスを引き継ぎます。
-	 * 引き継いだマスと復元フィールドを互いに紐づけるため、初期化も行います。
-	 *
-	 * 仮解答前の状態を復元した後に使用します。
+	 * 引き継いだマスと復元したフィールドを互いに紐づけるため、初期化も行います。
 	 *
 	 * @param boxList 復元した backup
 	 * @param rootBox 探索実行中のBoxインスタンス
 	 */
-	 static void replace(ArrayList<Box> boxList, Box rootBox) {
+	 void replace(ArrayList<Box> boxList, Box rootBox) {
 
-
-		Collections.sort(boxList, new BoxSort());
-		boxList.remove(0);
-		boxList.add(rootBox);
-		boxList.forEach(box -> box.init(boxList));
-		/*
 		for(Box box: boxList) {
 			if(box.equals(rootBox)) {
 				boxList.remove(box);
@@ -152,8 +139,8 @@ public class FieldSolver extends Field {
 				break;
 			}
 		}
+
 		boxList.forEach(box -> box.init(boxList));
-		*/
 	 }
 
 }

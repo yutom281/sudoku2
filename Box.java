@@ -1,6 +1,7 @@
 package sudoku;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Box {
 
@@ -15,6 +16,9 @@ public class Box {
 
 	private Possibles possibles;
 
+	// デバッグ
+	ArrayList<Box> field;
+
 	Box(Horizontal hor, Vertical vert, int initNumber){
 		this.hor = hor;
 		this.vert = vert;
@@ -26,14 +30,25 @@ public class Box {
 	}
 
 	void init(ArrayList<Box> field) {
+
+		this.areaHorizontal = new Area(field, this, hor);
+		this.areaVertical = new Area(field, this, vert);
+		this.areaSquare = new Area(field, this, square);
 		if(answer == 0) {
-			this.areaHorizontal = new Area(field, this, hor);
-			this.areaVertical = new Area(field, this, vert);
-			this.areaSquare = new Area(field, this, square);
 			this.possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
 		}
+
+		// デバッグ
+		this.field = field;
 	}
 
+	/* 配置できる数を取り除く→チェック→解答→更新
+	 * （ここで解答できるようになっても、最初の処理が終わるまで保留する）
+	 * →解答→更新→1周目終了→保留分を実行
+	 * remove, check, update までをマスごとに行う。updateの影響を他のマスにまで広げない。
+	 * 一回の処理では、そのBoxのみ取り扱う。
+	 */
+	/*
 	void calc() {
 		if(answer == 0) {
 			remove(areaHorizontal.calc());
@@ -43,10 +58,49 @@ public class Box {
 			search(areaHorizontal);
 			search(areaVertical);
 			search(areaSquare);
+
+			update();
 		}
 	}
+	*/
+	void calc() {
+		if(answer == 0) {
+			remove(areaHorizontal.calc());
+			remove(areaVertical.calc());
+			remove(areaSquare.calc());
+			answer = possibles.checkAnswer();
+		}
+		if(answer == 0) {
+			answer = areaHorizontal.search(possibles);
+		}
 
-	// 「N国同盟（ダブル数字）」ロジックによりPossiblesから数を取り除く
+		if(answer == 0) {
+			answer = areaVertical.search(possibles);
+		}
+
+		if(answer == 0) {
+			answer = areaSquare.search(possibles);
+		}
+		update();
+
+	}
+
+	void remove(ArrayList<Integer> notAnswer) {
+		possibles.remove(notAnswer);
+	}
+	void check() {
+		answer = possibles.checkAnswer();
+	}
+	void update() {
+		if(answer != 0) {
+			areaHorizontal.update(answer);
+			areaVertical.update(answer);
+			areaSquare.update(answer);
+			possibles = new Possibles();
+		}
+	}
+/*
+	// Possiblesから数を取り除く
 	void remove(ArrayList<Integer> notAnswer) {
 		int check = possibles.remove(notAnswer);
 		if(check != 0) {
@@ -56,7 +110,8 @@ public class Box {
 			areaSquare.update(answer);
 		}
 	}
-
+	*/
+/*
 	// Possibles のうち、Area 内で自身しか持たない数を探す
 	void search(Area area) {
 		int result = area.search(possibles);
@@ -67,6 +122,7 @@ public class Box {
 			areaSquare.update(answer);
 		}
 	}
+	*/
 
 	/**
 	 * 探索アルゴリズムを使用して解答します。
@@ -79,14 +135,15 @@ public class Box {
 
 	 String solver(ArrayList<Box> backup, int possibleNum) {
 
-		setTmpAnswer(possibleNum);
+		answer = possibleNum;
+		possibles = new Possibles();
 		areaHorizontal.update(possibleNum);
 		areaVertical.update(possibleNum);
 		areaSquare.update(possibleNum);
 
 		/*
 		 * Fieldクラス、FieldSolverクラスのメソッドを使用するため、
-		 * backupを主体にFieldSolverインスタンスを生成する。
+		 * backupを引数にFieldSolverインスタンスを生成する。
 		 */
 		FieldSolver fsolver = new FieldSolver(backup);
 
@@ -99,6 +156,7 @@ public class Box {
 		}
 
 		if(! fsolver.prove()) {
+			answer = 0;
 			return "contradicted";
 		}
 
@@ -111,6 +169,7 @@ public class Box {
 	  *
 	  * @param possibleNum 仮解答
 	  */
+	 /*
 	 final void setTmpAnswer(int possibleNum){
 
 		 if(possibles.count() > 1) {
@@ -118,6 +177,7 @@ public class Box {
 			 possibles = new Possibles();
 		 }
 	 }
+	 */
 
 	/**
 	 * 自身のコピーを作成します。
@@ -155,5 +215,12 @@ public class Box {
 	}
 	Possibles getPossibles() {
 		return this.possibles;
+	}
+
+	// デバッグ
+	void solverDebug (ArrayList<Box> log) {
+		ArrayList<Box> loglog = Field.backlog(log);
+		Collections.sort(loglog, new IndexSort());
+		IOStream.solverDebug(loglog);
 	}
 }
