@@ -49,6 +49,10 @@ public class Possibles {
 		return strPossibles;
 	}
 
+	int count() {
+		return possibleNums.size();
+	}
+
 	ArrayList<Integer> get(){
 		return possibleNums;
 	}

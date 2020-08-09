@@ -71,58 +71,57 @@ public class Box {
 	/**
 	 * 探索アルゴリズムを使用して解答します。
 	 *
-	 * 配置できる数の少ないマスから処理する。
-	 * 配置前にこのBoxインスタンスと全フィールドのコピーを作成する。「参照渡し」ではなく別インスタンスを生成することに注意。
+	 * @param backup 探索する field の複製
+	 * @param possibleNum 仮解答
 	 *
-	 * 候補の数のうち一つを配置し、Areaを通じて20マスを更新する。前の分岐点に戻る場合、この20マスも「元に戻す」必要がある。
-	 * Area20マスのさらにArea20マス……のように、変更の影響範囲にそってBox.calc()を進める。
-	 * １）最後まで到達した場合→終了。
-	 * ２）「矛盾」が生じた場合→このBoxのコピー（＝１回目のsolver()の取り消し基準点）に戻り、配置した数を候補から削除して次の数を配置する。
-	 * ３）再び解答不能になった場合→二次コピー（＝２回目のsolver()の取り消し基準点）を作成し、
-	 *     Areaの20マスの中から、候補の数が最も少ないマスを次に選んでsolver()を実行する。
-	 *     次のマスのすべての候補で「矛盾」が発生した場合、二次コピーを復元してこのBoxに戻り、３つめのBoxでsolver()を実行する
-	 *
-	 *「矛盾」：配置できる数が配置前に0になる。
-	 *「元に戻す」：answer = 0 にする。Area内の20マスのanswer, Possiblesを復元する。これを「基準点」に到達するまで繰り返す
-	 *「基準点」：コピーを作成した、「候補の数のうち一つを配置し」た時点。
+	 * @return "solved" 解答が完了した場合; "contradicted" 矛盾が生じた場合; "stopped" 解答できなくなった場合
 	 */
 
 	 String solver(ArrayList<Box> backup, int possibleNum) {
 
-		answer = possibleNum;
-		possibles = new Possibles();
+		setTmpAnswer(possibleNum);
 		areaHorizontal.update(possibleNum);
 		areaVertical.update(possibleNum);
 		areaSquare.update(possibleNum);
 
-		Field fieldBackup = new Field(backup);
+		/*
+		 * Fieldクラス、FieldSolverクラスのメソッドを使用するため、
+		 * backupを主体にFieldSolverインスタンスを生成する。
+		 */
+		FieldSolver fsolver = new FieldSolver(backup);
 
-		fieldBackup.run();
-		fieldBackup.run();
+		while(! fsolver.changeMode()) {
+			fsolver.run();
+		}
 
-		// 解答が完了した場合
-		if(! fieldBackup.check()) {
+		if(! fsolver.check()) {
 			return "solved";
 		}
-		// 解答不能になった場合
-		if(fieldBackup.check()) {
 
-
-			return "stopped";
-		}
-		// 矛盾が生じた場合
-		if(fieldBackup.findContradiction()) {
-
-
+		if(! fsolver.prove()) {
 			return "contradicted";
 		}
 
-		return "error";
+		return "stopped";
+
+	 }
+
+	 /**
+	  * 探索において、仮解答を配置し、配置できる数を0にします。
+	  *
+	  * @param possibleNum 仮解答
+	  */
+	 final void setTmpAnswer(int possibleNum){
+
+		 if(possibles.count() > 1) {
+			 answer = possibleNum;
+			 possibles = new Possibles();
+		 }
 	 }
 
 	/**
 	 * 自身のコピーを作成します。
-	 * 探索時、前の分岐点に戻るときに使用します。
+	 * 探索時、前の分岐点に戻るため（バックトラック）に使用します。
 	 */
 	Box copy(){
 		Box replica = new Box(this.hor, this.vert, this.answer);

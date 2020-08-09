@@ -13,8 +13,6 @@ public class SudokuAugust {
 		// 実行
 		while(! field.changeMode()) {
 
-			field.backlog();
-
 			field.run();
 
 		}
@@ -24,7 +22,6 @@ public class SudokuAugust {
 			field.solver();
 
 			field.debug();
-
 		}
 
 		// 出力
