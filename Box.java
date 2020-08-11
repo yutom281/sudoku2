@@ -1,7 +1,6 @@
 package sudoku;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 public class Box {
 
@@ -15,9 +14,6 @@ public class Box {
 	private Area areaSquare;
 
 	private Possibles possibles;
-
-	// デバッグ
-	ArrayList<Box> field;
 
 	Box(Horizontal hor, Vertical vert, int initNumber){
 		this.hor = hor;
@@ -37,9 +33,6 @@ public class Box {
 		if(answer == 0) {
 			this.possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
 		}
-
-		// デバッグ
-		this.field = field;
 	}
 
 	/*
@@ -67,12 +60,8 @@ public class Box {
 		}
 		update();
 	}
-
 	void remove(ArrayList<Integer> notAnswer) {
 		possibles.remove(notAnswer);
-	}
-	void check() {
-		answer = possibles.checkAnswer();
 	}
 	void update() {
 		if(answer != 0) {
@@ -156,12 +145,5 @@ public class Box {
 	}
 	Possibles getPossibles() {
 		return this.possibles;
-	}
-
-	// デバッグ
-	void solverDebug (ArrayList<Box> log) {
-		ArrayList<Box> loglog = Field.backlog(log);
-		Collections.sort(loglog, new IndexSort());
-		IOStream.solverDebug(loglog);
 	}
 }
