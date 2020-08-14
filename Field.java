@@ -30,6 +30,7 @@ public class Field {
 	 * 実行前にログを作成します。
 	 */
 	void run() {
+
 		backlog = backlog(field);
 		//field.forEach(box -> box.calc());
 		for(Box box: field) {
@@ -104,7 +105,23 @@ public class Field {
 	 * 解答結果をExcelに出力します。
 	 */
 	void output() {
-		new IOStream(field);
+		new IOStream(field, "answer", "answer");
+	}
+
+	/**
+	 * 問題がゲームのルールに違反している場合、例外を返します。
+	 */
+	void inspect() throws InputException{
+
+		ArrayList<Box> flaw = new ArrayList<>();
+
+		for(Box box:field) {
+			flaw.addAll(box.inspect());
+		}
+		if(flaw.size() > 0) {
+			IOStream.outputInspection(field, flaw);
+			throw new InputException("問題に誤りがあります。");
+		}
 	}
 
 	/**

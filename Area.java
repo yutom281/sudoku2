@@ -94,4 +94,22 @@ public class Area {
 		}
 		return possibleNums;
 	}
+
+	/**
+	 * 問題がゲームのルールに違反している場合、例外を返します。
+	 *
+	 * throws InputException 縦／横／ブロック内に同じ数字が２つ以上配置されている場合。
+	 */
+	ArrayList<Box> inspect(int answer) {
+
+		ArrayList<Box> flaw = new ArrayList<>();
+
+		for(Box box: area) {
+			int initNumber = box.getAnswer();
+			if(initNumber == answer) {
+				flaw.add(box);
+			}
+		}
+		return flaw;
+	}
 }

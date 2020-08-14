@@ -25,6 +25,22 @@ public class Box {
 		}
 	}
 
+	/**
+	 * 問題がゲームのルールに違反している場合、例外を返します。
+	 */
+	ArrayList<Box> inspect() {
+		ArrayList<Box> flaw = new ArrayList<>();
+		if(answer != 0) {
+			flaw.addAll(areaHorizontal.inspect(answer));
+			flaw.addAll(areaVertical.inspect(answer));
+			flaw.addAll(areaSquare.inspect(answer));
+		}
+		if(flaw.size() > 0) {
+			flaw.add(this);
+		}
+		return flaw;
+	}
+
 	void init(ArrayList<Box> field) {
 
 		this.areaHorizontal = new Area(field, this, hor);
@@ -93,7 +109,8 @@ public class Box {
 		FieldSolver fsolver = new FieldSolver(backup);
 
 		while(! fsolver.changeMode()) {
-			fsolver.run();
+
+				fsolver.run();
 		}
 
 		if(! fsolver.check()) {

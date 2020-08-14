@@ -10,23 +10,39 @@ public class SudokuAugust {
 		field = new Field();
 		field.init();
 
+		try {
+
+			field.inspect();
+
+		} catch(InputException ie) {
+			ie.printStackTrace();
+		}
+
 		// 実行
 		while(! field.changeMode()) {
 
 			field.run();
 
-			field.debug();
-
 		}
 
-		while(field.check()) {
+		while(! field.changeMode()) {
 
 			field.solver();
 
 		}
 
 		// 出力
-		field.output();
+		if(field.check()) {
+
+			field.output();
+
+		} else {
+
+			field.debug();
+			System.out.println("解答できませんでした。途中経過を出力します");
+
+		}
+
 
 	}
 }
