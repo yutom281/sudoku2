@@ -7,7 +7,8 @@ public class SudokuAugust {
 	public static void main(String[] args) {
 
 		// 入力
-		field = new Field();
+		IOStream input = new IOStream();
+		field = new Field(input.get());
 		field.init();
 
 		try {
@@ -25,14 +26,14 @@ public class SudokuAugust {
 
 		}
 
-		while(! field.changeMode()) {
+		while(field.check()) {
 
 			field.solver();
 
 		}
 
 		// 出力
-		if(field.check()) {
+		if(! field.check()) {
 
 			field.output();
 

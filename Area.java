@@ -112,4 +112,14 @@ public class Area {
 		}
 		return flaw;
 	}
+
+	/**
+	 * Box.rollback()に呼び出されます。
+	 */
+	void rollback(int oldAnswer) {
+
+		for(Box box: area) {
+			box.getPossibles().get().add(oldAnswer);
+		}
+	}
 }

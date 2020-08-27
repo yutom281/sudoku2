@@ -30,6 +30,12 @@ public class Possibles {
 		}
 	}
 
+	void remove(int notAnswer) {
+		ArrayList<Integer> rapper = new ArrayList<>();
+		rapper.add(notAnswer);
+		remove(rapper);
+	}
+
 	int search(ArrayList<Integer> searcher){
 		 for(int number: possibleNums) {
 			 if(! searcher.contains(number)) {
@@ -62,5 +68,13 @@ public class Possibles {
 
 	ArrayList<Integer> get(){
 		return possibleNums;
+	}
+
+	boolean contains(int num) {
+
+		if(possibleNums.contains(num)) {
+			return true;
+		}
+		return false;
 	}
 }

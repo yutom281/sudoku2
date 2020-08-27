@@ -29,7 +29,7 @@ public class IOStream {
 			Path path = Path.of("mondai.xlsx");
 	        String strPath = path.toAbsolutePath().toString();
 
-			FileInputStream fis=new FileInputStream(new File(strPath));
+			FileInputStream fis = new FileInputStream(new File(strPath));
 			Workbook wb=new XSSFWorkbook(fis);
 			Sheet sht=wb.getSheetAt(0);
 			Iterator<Row> iterator = sht.iterator();
@@ -50,6 +50,7 @@ public class IOStream {
 	            	if(currentCell.getNumericCellValue() != 0) {
 	            		initAnswer = (int)currentCell.getNumericCellValue();
 	            	}
+	            	
 	            	Box box = new Box(hor, vert, initAnswer);
 	            	rawField.add(box);
 
@@ -124,36 +125,6 @@ public class IOStream {
 		}
 
 		new IOStream(field, "answers", "debugAnswers");
-
-		/*
-		try {
-			XSSFWorkbook workbook = new XSSFWorkbook();
-			XSSFSheet sheet = workbook.createSheet("answers");
-			int index = 0;
-
-			for(int i = 0; i < 9; i++) {
-				Row row = sheet.createRow(i);
-				row.setHeightInPoints(20);
-				for(int j = 0; j < 9; j++) {
-					Box currentBox = field.get(index);
-					sheet.setColumnWidth(i, 1024);
-					Cell cell = row.createCell(j);
-					int answer = currentBox.getAnswer();
-					if(answer != 0) {
-						cell.setCellValue(answer);
-					}
-					index++;
-				}
-			}
-			FileOutputStream outputStream = new FileOutputStream("debugAnswers.xlsx");
-			workbook.write(outputStream);
-			workbook.close();
-			outputStream.close();
-
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
-		*/
 	}
 
 	static void outputInspection(ArrayList<Box>field, ArrayList<Box> flaw) {

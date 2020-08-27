@@ -9,23 +9,22 @@ public class FieldSolver extends Field {
 	 * コンストラクタ。これを呼び出したFieldインスタンスの情報を引き継ぎます。
 	 */
 	public FieldSolver(ArrayList<Box> boxList){
-		this.field = boxList;
+		super(boxList);
 	}
 
 	/**
 	 * 探索アルゴリズムを開始します。コンストラクタを呼び出したFieldインスタンスより実行します。
 	 */
 	void solver() {
-		this.backlog = backlog(this.field);
-		solver(this.field, this.backlog);
+		backlog = backlog(field);
+		solver(field, backlog);
 	}
 
 	/**
 	 * 探索アルゴリズムを使用して解答します。
 	 * バックトラック（仮解答前の状態の復元）のため、仮解答は backup 上で行います。
 	 * オリジナルの情報を変更しないので、バックトラックは backup を削除・再生成するだけで完了します。
-	 * このとき、for文での NullPointerException を回避するため、仮解答を実行中のマスのみ再生成せずに
-	 * 同じインスタンスを引き継ぎます。
+	 * このとき、仮解答を実行中のマスのみ再生成せずに同じインスタンスを引き継ぎます。
 	 *
 	 * 仮解答が誤りだった場合、前の状態を復元し、次の仮解答に進みます。
 	 *
@@ -39,59 +38,36 @@ public class FieldSolver extends Field {
 	 */
 	String solver(ArrayList<Box> boxList, ArrayList<Box> backup) {
 
-		ArrayList<Box> deepBackup;
-
-		/*
-		 * 仮解答を配置するマス＝実行者を選択する。
-		 */
+		// 仮解答を配置するマス＝実行者を選択する。
 		Collections.sort(backup, new BoxSort());
 		Box rootBox = backup.get(0);
-		Possibles rootPossibles = rootBox.getPossibles();
 
-		/*
-		 * 仮解答を選択し、探索を実行する。
-		 */
-		for(int possibleNum: rootPossibles.get()) {
+		// 仮解答を選択し、探索を実行する。
+		for(int possibleNum: rootBox.getPossibles().get()) {
 
 			String message = rootBox.solver(backup, possibleNum);
 
-			/*
-			 * 矛盾が生じた場合、次の仮解答に進む。
-			 */
+			// 矛盾が生じた場合、バックトラックして次の仮解答に進む。
 			if(message.equals("contradicted")) {
 				backup.clear();
 				backup.addAll(backlog(boxList));
 				replace(backup, rootBox);
 				continue;
 			}
-			/*
-			 * 解答を続けられなくなった場合、現在の状態を保存し、二重で探索を実行する。
-			 */
+
+			// 解答を続けられなくなった場合、現在の状態を保存し、二重で探索を実行する。
 			if(message.equals("stopped")) {
-				deepBackup = backlog(backup);
+				ArrayList<Box> deepBackup = backlog(backup);
 				replace(deepBackup, rootBox);
 
 				String deepMessage = solver(backup, deepBackup);
 
-				/*
-				 * 二重探索のすべての仮解答で矛盾が生じたら、この探索の仮解答が誤りとなり、次の仮解答に進む。
-				 */
-				if(deepMessage.equals("contradicted")) {
-					deepBackup.clear();
-					continue;
-				}
-				/*
-				 * 二重探索で解答が完了したら、この探索に結果と完了メッセージを返す。
-				 */
 				if(deepMessage.equals("solved")) {
-					backup.clear();
-					backup.addAll(deepBackup);
 					message = message.replace(message, deepMessage);
 				}
 			}
-			/*
-			 * 解答が完了した場合、処理を終了する。
-			 */
+
+			// 解答が完了した場合、結果を反映して処理を終了する。
 			if(message.equals("solved")) {
 				boxList.clear();
 				boxList.addAll(backup);
@@ -99,12 +75,8 @@ public class FieldSolver extends Field {
 				return message;
 			}
 		}
-		/*
-		 * すべての仮解答で矛盾が生じた場合、バックトラックにおいてひとつ上の仮解答が誤りとなり、メッセージを返して終了する。
-		 * その後、ひとつ上の solver() のforループは次の仮解答に進む。
-		 *
-		 * 最上位＝最初の探索では、仮解答のうちひとつは必ず正しいため、上記は発生しない（必ず "solved" を返して終了する）。
-		 */
+		// すべての仮解答で矛盾が生じた場合、バックトラックにおいてひとつ上の仮解答が誤りとなり、メッセージを返して終了する。
+		// その後、ひとつ上の solver() は次の仮解答に進む。
 		return "contradicted";
 	}
 
@@ -127,7 +99,7 @@ public class FieldSolver extends Field {
 	 * 探索のバックトラックにおいて、探索を実行中のマスを引き継ぎます。
 	 * 引き継いだマスと復元したフィールドを互いに紐づけるため、初期化も行います。
 	 *
-	 * @param boxList 復元した backup
+	 * @param boxList 復元した backlog
 	 * @param rootBox 探索実行中のBoxインスタンス
 	 */
 	 void replace(ArrayList<Box> boxList, Box rootBox) {
@@ -139,8 +111,6 @@ public class FieldSolver extends Field {
 				break;
 			}
 		}
-
 		boxList.forEach(box -> box.init(boxList));
 	 }
-
 }

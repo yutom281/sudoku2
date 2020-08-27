@@ -11,9 +11,8 @@ public class Field {
 	 * コンストラクタ。
 	 * 問題を読み込み、全マスの Boxインスタンスを生成してFieldに格納します。
 	 */
-	Field() {
-		IOStream input = new IOStream();
-		this.field = input.get();
+	Field(ArrayList<Box> input) {
+		this.field = input;
 	}
 
 	/**
@@ -122,6 +121,51 @@ public class Field {
 			IOStream.outputInspection(field, flaw);
 			throw new InputException("問題に誤りがあります。");
 		}
+	}
+
+	/**
+	 * 二つのフィールドインスタンスを比較します。
+	 *
+	 * @return [@code true] 同じ行番号・列番号を持つマスの解答がすべて等しい場合
+	 */
+	boolean equals(Field anotherField) {
+
+		for(int index = 0; index < 81; index++) {
+
+			Box selfBox = getBox(index);
+			Box otherBox = anotherField.getBox(index);
+
+			int selfAnswer = selfBox.getAnswer();
+			int otherAnswer = otherBox.getAnswer();
+
+			if(selfAnswer != otherAnswer) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * 指定した行番号・列番号のBoxインスタンスを返します。
+	 *
+	 * @param index this.fieldのインデックス
+	 * @return 指定したBoxインスタンス
+	 */
+	Box getBox(Horizontal hor, Vertical vert) {
+
+		for(Box box: field) {
+			if(box.getHorizontal().equal(hor) && box.getVertical().equal(vert)) {
+				return box;
+			}
+		}
+		// プログラムが正常なら、この処理には到達しない
+		Box dummy = new Box(new Horizontal(0), new Vertical(0), 0);
+		return dummy;
+	}
+
+	Box getBox(int index) {
+
+		return field.get(index);
 	}
 
 	/**

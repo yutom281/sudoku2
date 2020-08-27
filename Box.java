@@ -109,8 +109,7 @@ public class Box {
 		FieldSolver fsolver = new FieldSolver(backup);
 
 		while(! fsolver.changeMode()) {
-
-				fsolver.run();
+			fsolver.run();
 		}
 
 		if(! fsolver.check()) {
@@ -124,6 +123,19 @@ public class Box {
 
 		return "stopped";
 
+	 }
+
+	 void rollback() {
+		if(answer != 0) {
+			int old = answer;
+			answer = 0;
+			// ★
+			possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
+			possibles.remove(old);
+			areaHorizontal.rollback(old);
+			areaVertical.rollback(old);
+			areaSquare.rollback(old);
+		}
 	 }
 
 	/**
