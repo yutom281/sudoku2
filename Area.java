@@ -74,7 +74,7 @@ public class Area {
 	int search(Possibles possibles) {
 		ArrayList<Integer> searcher = new ArrayList<>();
 		for(Box box: area) {
-			searcher.addAll(box.getPossibles().get());
+			searcher.addAll(box.getPossibles().getValues());
 		}
 		return possibles.search(searcher);
 	}
@@ -116,10 +116,23 @@ public class Area {
 	/**
 	 * Box.rollback()に呼び出されます。
 	 */
+	/*
 	void rollback(int oldAnswer) {
 
 		for(Box box: area) {
-			box.getPossibles().get().add(oldAnswer);
+			if(box.getAnswer() == 0) {
+				box.getPossibles().getValues().add(oldAnswer);
+			}
+		}
+	}
+	*/
+
+	/**
+	 * Box.rollback()に呼び出されます。
+	 */
+	void recalc() {
+		for(Box box: area) {
+			box.recalc();
 		}
 	}
 }

@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -17,47 +16,44 @@ import org.apache.poi.ss.util.CellUtil;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbookFactory;
 
 public class IOStream {
 
 	ArrayList<Box> rawField = new ArrayList<>();
-	String outputFileName = "";
+	String sheetName;
 
 	// 問題を入力するコンストラクタ
-	IOStream(){
+	// 問題の9x9マス以外の書式に「数値」を設定していると、空白のマスを取得しなくなる
+	IOStream(String sheetName){
+
+		this.sheetName = sheetName;
 		try {
 			Path path = Path.of("mondai.xlsx");
 	        String strPath = path.toAbsolutePath().toString();
 
 			FileInputStream fis = new FileInputStream(new File(strPath));
 			Workbook wb=new XSSFWorkbook(fis);
-			Sheet sht=wb.getSheetAt(0);
-			Iterator<Row> iterator = sht.iterator();
-			int index_H = 1;
-			while (iterator.hasNext()) {
-				Row currentRow = iterator.next();
-	            Iterator<Cell> cellIterator = currentRow.iterator();
+			Sheet sht=wb.getSheet(sheetName);
 
-	            int index_V = 1;
-	            while (cellIterator.hasNext()) {
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sht.getRow(index_H);
+				for(int index_V = 1; index_V < 10; index_V++) {
+					Cell cell = row.getCell(index_V);
 
-	            	Cell currentCell = cellIterator.next();
-
-	            	Horizontal hor = new Horizontal(index_H);
+					Horizontal hor = new Horizontal(index_H);
 	            	Vertical vert = new Vertical(index_V);
 	            	int initAnswer = 0;
 
-	            	if(currentCell.getNumericCellValue() != 0) {
-	            		initAnswer = (int)currentCell.getNumericCellValue();
+	            	if(cell.getNumericCellValue() != 0) {
+	            		initAnswer = (int)cell.getNumericCellValue();
 	            	}
-	            	
+
 	            	Box box = new Box(hor, vert, initAnswer);
 	            	rawField.add(box);
-
-	            	index_V++;
-	            }
-	            index_H++;
+				}
 			}
+
 			wb.close();
 			fis.close();
 
@@ -65,87 +61,190 @@ public class IOStream {
 			e.printStackTrace();
 		}
 	}
-	// 解答を出力するコンストラクタ
-	IOStream(ArrayList<Box> field, String sheetName, String fileName){
-		try {
-			outputFileName = fileName + ".xlsx";
-			XSSFWorkbook workbook = new XSSFWorkbook();
-			XSSFSheet sheet = workbook.createSheet(sheetName);
-			int index = 0;
 
-			for(int i = 0; i < 9; i++) {
-				Row row = sheet.createRow(i);
-				row.setHeightInPoints(20);
-				for(int j = 0; j < 9; j++) {
-					Box currentBox = field.get(index);
-					sheet.setColumnWidth(i, 1024);
-					Cell cell = row.createCell(j);
-					cell.setCellValue(currentBox.getAnswer());
-					index++;
-				}
-			}
-			Path path = Path.of(outputFileName);
+	// 問題を作成するコンストラクタ
+	IOStream(int threshold){
+
+		Factory factory = new Factory(threshold);
+		ArrayList<Box> output = factory.get();
+
+		try {
+			Path path = Path.of("mondai.xlsx");
 	        String strPath = path.toAbsolutePath().toString();
-			FileOutputStream outputStream = new FileOutputStream(strPath);
-			workbook.write(outputStream);
-			workbook.close();
-			outputStream.close();
 
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
-	}
+			FileInputStream fis = new FileInputStream(new File(strPath));
+			Workbook wb=new XSSFWorkbook(fis);
+			Sheet sht=wb.createSheet();
+			sheetName = sht.getSheetName();
 
-
-	// デバッグ　途中経過出力
-	static void debug(ArrayList<Box> field) {
-		try {
-			XSSFWorkbook workbook = new XSSFWorkbook();
-			XSSFSheet sheet = workbook.createSheet("possibles");
 			int index = 0;
-
-			for(int i = 0; i < 9; i++) {
-				Row row = sheet.createRow(i);
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sht.createRow(index_H);
 				row.setHeightInPoints(20);
-				for(int j = 0; j < 9; j++) {
-					Box currentBox = field.get(index);
-					sheet.setColumnWidth(i, 1024);
-					Cell cell = row.createCell(j);
-					cell.setCellValue(currentBox.getPossibles().get().toString());
+				for(int index_V = 1; index_V < 10; index_V++) {
+					Cell cell = row.createCell(index_V);
+					sht.setColumnWidth(index_V, 1024);
+
+					Box currentBox = output.get(index);
+					int answer = currentBox.getAnswer();
+					if(answer != 0) {
+						cell.setCellValue(answer);
+					}
 					index++;
 				}
 			}
-			FileOutputStream outputStream = new FileOutputStream("debugPossibles.xlsx");
-			workbook.write(outputStream);
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sht.getRow(index_H);
+				for(int index_V = 11; index_V < 20; index_V++) {
+					sht.setColumnWidth(index_V, 1024);
+					row.createCell(index_V);
+				}
+			}
+			fis.close();
+
+			FileOutputStream fos = new FileOutputStream(strPath);
+			wb.write(fos);
+			wb.close();
+			fos.close();
+
+		}catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 解答を出力する
+	// OutputStream() の第二パラメータに true を指定すると、 excelブックにバグが発生する
+	void output(){
+
+		try {
+			Path path = Path.of("mondai.xlsx");
+	        String strPath = path.toAbsolutePath().toString();
+	        FileInputStream fis = new FileInputStream(strPath);
+			XSSFWorkbook workbook = XSSFWorkbookFactory.createWorkbook(fis);
+			XSSFSheet sheet = workbook.getSheet(sheetName);
+			int index = 0;
+
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sheet.getRow(index_H);
+				row.setHeightInPoints(20);
+				for(int index_V = 11; index_V < 20; index_V++) {
+					Box currentBox = rawField.get(index);
+					sheet.setColumnWidth(index_V, 1024);
+					Cell cell = row.getCell(index_V);
+					int answer = currentBox.getAnswer();
+					cell.setCellValue(answer);
+					index++;
+				}
+			}
+			fis.close();
+
+			FileOutputStream fos = new FileOutputStream(strPath);
+			workbook.write(fos);
 			workbook.close();
-			outputStream.close();
+			fos.close();
 
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-
-		new IOStream(field, "answers", "debugAnswers");
 	}
 
-	static void outputInspection(ArrayList<Box>field, ArrayList<Box> flaw) {
+	// デバッグ、途中経過出力
+	void debug() {
+
+		output();
 
 		try {
-			XSSFWorkbook workbook = new XSSFWorkbook();
-			XSSFSheet sheet = workbook.createSheet("flaw");
+			Path path = Path.of("mondai.xlsx");
+	        String strPath = path.toAbsolutePath().toString();
+	        FileInputStream fis = new FileInputStream(strPath);
+			XSSFWorkbook workbook = XSSFWorkbookFactory.createWorkbook(fis);
+			XSSFSheet sheet = workbook.getSheet(sheetName);
+			int index = 0;
+
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sheet.getRow(index_H);
+				row.setHeightInPoints(20);
+				for(int index_V = 21; index_V < 30; index_V++) {
+					Box currentBox = rawField.get(index);
+					sheet.setColumnWidth(index_V, 6200);
+					Cell cell = row.getCell(index_V);
+					cell.setCellValue(currentBox.getPossibles().getValues().toString());
+					index++;
+				}
+			}
+			fis.close();
+
+			FileOutputStream fos = new FileOutputStream(strPath);
+			workbook.write(fos);
+			workbook.close();
+			fos.close();
+
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	static void debug(ArrayList<Box> field) {
+
+		try {
+			Path path = Path.of("mondai.xlsx");
+	        String strPath = path.toAbsolutePath().toString();
+	        FileInputStream fis = new FileInputStream(strPath);
+			XSSFWorkbook workbook = XSSFWorkbookFactory.createWorkbook(fis);
+			XSSFSheet sheet = workbook.createSheet();
+			int index = 0;
+
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sheet.createRow(index_H);
+				row.setHeightInPoints(20);
+				for(int index_V = 1; index_V < 10; index_V++) {
+					sheet.setColumnWidth(index_V, 1024);
+					Cell cell = row.createCell(index_V);
+					Box currentBox = field.get(index);
+					int answer = currentBox.getAnswer();
+					if(answer != 0) {
+						cell.setCellValue(answer);
+					}
+					index++;
+				}
+			}
+			fis.close();
+
+			FileOutputStream fos = new FileOutputStream(strPath);
+			workbook.write(fos);
+			workbook.close();
+			fos.close();
+
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	void outputInspection(ArrayList<Box> flaw) {
+
+		try {
+			Path path = Path.of("mondai.xlsx");
+	        String strPath = path.toAbsolutePath().toString();
+	        FileInputStream fis = new FileInputStream(strPath);
+			XSSFWorkbook workbook = XSSFWorkbookFactory.createWorkbook(fis);
+			XSSFSheet sheet = workbook.getSheet(sheetName);
 			int index = 0;
 
 			XSSFFont font = workbook.createFont();
 			font.setBold(true);
 			font.setColor(IndexedColors.RED.getIndex());
 
-			for(int i = 0; i < 9; i++) {
-				Row row = sheet.createRow(i);
+			for(int i = 1; i < 10; i++) {
+				Row row = sheet.getRow(i);
 				row.setHeightInPoints(20);
-				for(int j = 0; j < 9; j++) {
-					Box currentBox = field.get(index);
-					sheet.setColumnWidth(i, 1024);
-					Cell cell = row.createCell(j);
-					cell.setCellValue(currentBox.getAnswer());
+				for(int j = 11; j < 20; j++) {
+					Box currentBox = rawField.get(index);
+					sheet.setColumnWidth(j, 1024);
+					Cell cell = row.getCell(j);
+					int answer = currentBox.getAnswer();
+					if(answer != 0) {
+						cell.setCellValue(answer);
+					}
 
 					if(flaw.contains(currentBox)) {
 						CellUtil.setFont(cell, font);
@@ -155,12 +254,10 @@ public class IOStream {
 				}
 			}
 
-			Path path = Path.of("inspection.xlsx");
-	        String strPath = path.toAbsolutePath().toString();
-			FileOutputStream outputStream = new FileOutputStream(strPath);
-			workbook.write(outputStream);
+			FileOutputStream fos = new FileOutputStream(strPath);
+			workbook.write(fos);
 			workbook.close();
-			outputStream.close();
+			fos.close();
 
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -172,61 +269,4 @@ public class IOStream {
 		return this.rawField;
 	}
 
-/*
-	 static void solverDebug (ArrayList<Box> log) {
-
-		 try {
-				XSSFWorkbook workbook = new XSSFWorkbook();
-				XSSFSheet sheet = workbook.createSheet("possibles");
-				int index = 0;
-
-				for(int i = 0; i < 9; i++) {
-					Row row = sheet.createRow(i);
-					row.setHeightInPoints(20);
-					for(int j = 0; j < 9; j++) {
-						Box currentBox = log.get(index);
-						sheet.setColumnWidth(i, 1024);
-						Cell cell = row.createCell(j);
-						cell.setCellValue(currentBox.getPossibles().get().toString());
-						index++;
-					}
-				}
-				FileOutputStream outputStream = new FileOutputStream("solDebugPossibles.xlsx");
-				workbook.write(outputStream);
-				workbook.close();
-				outputStream.close();
-
-			} catch(IOException e) {
-				e.printStackTrace();
-			}
-			try {
-				XSSFWorkbook workbook = new XSSFWorkbook();
-				XSSFSheet sheet = workbook.createSheet("answers");
-				int index = 0;
-
-				for(int i = 0; i < 9; i++) {
-					Row row = sheet.createRow(i);
-					row.setHeightInPoints(20);
-					for(int j = 0; j < 9; j++) {
-						Box currentBox = log.get(index);
-						sheet.setColumnWidth(i, 1024);
-						Cell cell = row.createCell(j);
-						int answer = currentBox.getAnswer();
-						if(answer != 0) {
-							cell.setCellValue(answer);
-						}
-						index++;
-					}
-				}
-				FileOutputStream outputStream = new FileOutputStream("solDebugAnswers.xlsx");
-				workbook.write(outputStream);
-				workbook.close();
-				outputStream.close();
-
-			} catch(IOException e) {
-				e.printStackTrace();
-			}
-
-	 }
-	 */
 }

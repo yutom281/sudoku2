@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class Field {
 
+	protected IOStream input;
 	protected ArrayList<Box> field;
 	protected ArrayList<Box> backlog;
 
@@ -11,9 +12,12 @@ public class Field {
 	 * コンストラクタ。
 	 * 問題を読み込み、全マスの Boxインスタンスを生成してFieldに格納します。
 	 */
-	Field(ArrayList<Box> input) {
-		this.field = input;
+	Field(IOStream input) {
+		this.input = input;
+		this.field = input.get();
 	}
+
+	Field(){}
 
 	/**
 	 * 全マスの Area, Possiblesインスタンスを生成します。
@@ -104,7 +108,7 @@ public class Field {
 	 * 解答結果をExcelに出力します。
 	 */
 	void output() {
-		new IOStream(field, "answer", "answer");
+		input.output();
 	}
 
 	/**
@@ -118,7 +122,7 @@ public class Field {
 			flaw.addAll(box.inspect());
 		}
 		if(flaw.size() > 0) {
-			IOStream.outputInspection(field, flaw);
+			input.outputInspection(flaw);
 			throw new InputException("問題に誤りがあります。");
 		}
 	}
@@ -153,14 +157,16 @@ public class Field {
 	 */
 	Box getBox(Horizontal hor, Vertical vert) {
 
+		int index = 0;
 		for(Box box: field) {
 			if(box.getHorizontal().equal(hor) && box.getVertical().equal(vert)) {
-				return box;
+				break;
 			}
+			index++;
 		}
 		// プログラムが正常なら、この処理には到達しない
-		Box dummy = new Box(new Horizontal(0), new Vertical(0), 0);
-		return dummy;
+		//Box dummy = new Box(new Horizontal(0), new Vertical(0), 0);
+		return getBox(index);
 	}
 
 	Box getBox(int index) {
@@ -173,6 +179,14 @@ public class Field {
 	 * 解答状況と、マスごとに配置できる数の一覧をExcelに出力します。
 	 */
 	void debug() {
-		IOStream.debug(field);
+		input.debug();
+	}
+
+	void print() {
+		ArrayList<Integer> currentAnswers = new ArrayList<>();
+		field.forEach(box -> currentAnswers.add(box.getAnswer()));
+		String currAns = currentAnswers.toString();
+		System.out.println(currAns);
+		System.out.println(currentAnswers.size());
 	}
 }

@@ -6,8 +6,8 @@ import java.util.Collections;
 
 public class Possibles {
 
-	private Integer[] nums = {1,2,3,4,5,6,7,8,9};
-	private ArrayList<Integer> possibleNums = new ArrayList<>(Arrays.asList(nums));
+	private Integer[] tmp = {1,2,3,4,5,6,7,8,9};
+	private ArrayList<Integer> possibleNums = new ArrayList<>(Arrays.asList(tmp));
 
 	// コンストラクタ。Box に配置できる数を計算する
 	Possibles(ArrayList<Integer> numsH, ArrayList<Integer> numsV, ArrayList<Integer> numsSQ){
@@ -33,7 +33,8 @@ public class Possibles {
 	void remove(int notAnswer) {
 		ArrayList<Integer> rapper = new ArrayList<>();
 		rapper.add(notAnswer);
-		remove(rapper);
+		//remove(rapper);
+		possibleNums.removeAll(rapper);
 	}
 
 	int search(ArrayList<Integer> searcher){
@@ -66,8 +67,12 @@ public class Possibles {
 		return possibleNums.size();
 	}
 
-	ArrayList<Integer> get(){
+	ArrayList<Integer> getValues(){
 		return possibleNums;
+	}
+
+	int get(int index) {
+		return possibleNums.get(index);
 	}
 
 	boolean contains(int num) {

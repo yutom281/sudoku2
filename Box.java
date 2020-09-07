@@ -15,6 +15,8 @@ public class Box {
 
 	private Possibles possibles;
 
+	private int rollbackedAnswer;
+
 	Box(Horizontal hor, Vertical vert, int initNumber){
 		this.hor = hor;
 		this.vert = vert;
@@ -102,10 +104,7 @@ public class Box {
 		answer = possibleNum;
 		update();
 
-		/*
-		 * Fieldクラス、FieldSolverクラスのメソッドを使用するため、
-		 * backupを引数にFieldSolverインスタンスを生成する。
-		 */
+		// Fieldクラス、FieldSolverクラスのメソッドを使用する
 		FieldSolver fsolver = new FieldSolver(backup);
 
 		while(! fsolver.changeMode()) {
@@ -127,15 +126,20 @@ public class Box {
 
 	 void rollback() {
 		if(answer != 0) {
-			int old = answer;
+			rollbackedAnswer = answer;
 			answer = 0;
-			// ★
-			possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
-			possibles.remove(old);
-			areaHorizontal.rollback(old);
-			areaVertical.rollback(old);
-			areaSquare.rollback(old);
 		}
+		recalc();
+		areaHorizontal.recalc();
+		areaVertical.recalc();
+		areaSquare.recalc();
+	 }
+
+	 void recalc() {
+		 if(answer == 0) {
+			 possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
+			 possibles.remove(rollbackedAnswer);
+		 }
 	 }
 
 	/**

@@ -9,7 +9,7 @@ public class FieldSolver extends Field {
 	 * コンストラクタ。これを呼び出したFieldインスタンスの情報を引き継ぎます。
 	 */
 	public FieldSolver(ArrayList<Box> boxList){
-		super(boxList);
+		field = boxList;
 	}
 
 	/**
@@ -36,14 +36,14 @@ public class FieldSolver extends Field {
 	 *
 	 * @return "contradicted" すべての仮解答で矛盾が生じた場合（二重探索にのみ発生）; "solved" 解答が完了した場合
 	 */
-	String solver(ArrayList<Box> boxList, ArrayList<Box> backup) {
+	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup) {
 
 		// 仮解答を配置するマス＝実行者を選択する。
 		Collections.sort(backup, new BoxSort());
 		Box rootBox = backup.get(0);
 
 		// 仮解答を選択し、探索を実行する。
-		for(int possibleNum: rootBox.getPossibles().get()) {
+		for(int possibleNum: rootBox.getPossibles().getValues()) {
 
 			String message = rootBox.solver(backup, possibleNum);
 
@@ -102,7 +102,7 @@ public class FieldSolver extends Field {
 	 * @param boxList 復元した backlog
 	 * @param rootBox 探索実行中のBoxインスタンス
 	 */
-	 void replace(ArrayList<Box> boxList, Box rootBox) {
+	 static void replace(ArrayList<Box> boxList, Box rootBox) {
 
 		for(Box box: boxList) {
 			if(box.equals(rootBox)) {
