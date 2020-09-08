@@ -1,22 +1,12 @@
 package sudoku;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.util.CellUtil;
-import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.*;
+import org.apache.poi.xssf.usermodel.*;
 
 public class IOStream {
 
@@ -100,6 +90,55 @@ public class IOStream {
 					row.createCell(index_V);
 				}
 			}
+
+			CellStyle top = wb.createCellStyle();
+			top.setBorderTop(BorderStyle.THICK);
+			CellStyle bottom = wb.createCellStyle();
+			top.setBorderBottom(BorderStyle.THICK);
+			CellStyle right = wb.createCellStyle();
+			top.setBorderRight(BorderStyle.THICK);
+			CellStyle left = wb.createCellStyle();
+			top.setBorderLeft(BorderStyle.THICK);
+
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sht.getRow(index_H);
+				for(int index_V = 1; index_V < 10; index_V++) {
+					Cell cell = row.getCell(index_V);
+
+					if(index_H == 1 || index_H == 4 || index_H == 7) {
+						cell.setCellStyle(top);
+					}
+					if(index_H == 9) {
+						cell.setCellStyle(bottom);
+					}
+					if(index_V == 1 || index_V == 4 || index_V == 7) {
+						cell.setCellStyle(left);
+					}
+					if(index_V == 9) {
+						cell.setCellStyle(right);
+					}
+				}
+			}
+			for(int index_H = 1; index_H < 10; index_H++) {
+				Row row = sht.getRow(index_H);
+				for(int index_V = 11; index_V < 20; index_V++) {
+					Cell cell = row.getCell(index_V);
+
+					if(index_H == 1 || index_H == 4 || index_H == 7) {
+						cell.setCellStyle(top);
+					}
+					if(index_H == 9) {
+						cell.setCellStyle(bottom);
+					}
+					if(index_V == 11 || index_V == 14 || index_V == 17) {
+						cell.setCellStyle(left);
+					}
+					if(index_V == 19) {
+						cell.setCellStyle(right);
+					}
+				}
+			}
+
 			fis.close();
 
 			FileOutputStream fos = new FileOutputStream(strPath);
