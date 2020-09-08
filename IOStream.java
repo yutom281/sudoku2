@@ -1,12 +1,24 @@
 package sudoku;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.ss.util.*;
-import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbookFactory;
 
 public class IOStream {
 
@@ -91,53 +103,7 @@ public class IOStream {
 				}
 			}
 
-			CellStyle top = wb.createCellStyle();
-			top.setBorderTop(BorderStyle.THICK);
-			CellStyle bottom = wb.createCellStyle();
-			top.setBorderBottom(BorderStyle.THICK);
-			CellStyle right = wb.createCellStyle();
-			top.setBorderRight(BorderStyle.THICK);
-			CellStyle left = wb.createCellStyle();
-			top.setBorderLeft(BorderStyle.THICK);
-
-			for(int index_H = 1; index_H < 10; index_H++) {
-				Row row = sht.getRow(index_H);
-				for(int index_V = 1; index_V < 10; index_V++) {
-					Cell cell = row.getCell(index_V);
-
-					if(index_H == 1 || index_H == 4 || index_H == 7) {
-						cell.setCellStyle(top);
-					}
-					if(index_H == 9) {
-						cell.setCellStyle(bottom);
-					}
-					if(index_V == 1 || index_V == 4 || index_V == 7) {
-						cell.setCellStyle(left);
-					}
-					if(index_V == 9) {
-						cell.setCellStyle(right);
-					}
-				}
-			}
-			for(int index_H = 1; index_H < 10; index_H++) {
-				Row row = sht.getRow(index_H);
-				for(int index_V = 11; index_V < 20; index_V++) {
-					Cell cell = row.getCell(index_V);
-
-					if(index_H == 1 || index_H == 4 || index_H == 7) {
-						cell.setCellStyle(top);
-					}
-					if(index_H == 9) {
-						cell.setCellStyle(bottom);
-					}
-					if(index_V == 11 || index_V == 14 || index_V == 17) {
-						cell.setCellStyle(left);
-					}
-					if(index_V == 19) {
-						cell.setCellStyle(right);
-					}
-				}
-			}
+			drawLattice(wb, sht);
 
 			fis.close();
 
@@ -150,6 +116,7 @@ public class IOStream {
 			e.printStackTrace();
 		}
 	}
+
 
 	// 解答を出力する
 	// OutputStream() の第二パラメータに true を指定すると、 excelブックにバグが発生する
@@ -175,6 +142,9 @@ public class IOStream {
 					index++;
 				}
 			}
+
+			drawLattice(workbook, sheet);
+
 			fis.close();
 
 			FileOutputStream fos = new FileOutputStream(strPath);
@@ -306,6 +276,88 @@ public class IOStream {
 
 	ArrayList<Box> get(){
 		return this.rawField;
+	}
+
+	void drawLattice(Workbook wb, Sheet sht) {
+
+		CellStyle top = wb.createCellStyle();
+		top.setBorderTop(BorderStyle.THICK);
+		CellStyle bottom = wb.createCellStyle();
+		bottom.setBorderBottom(BorderStyle.THICK);
+		CellStyle right = wb.createCellStyle();
+		right.setBorderRight(BorderStyle.THICK);
+		CellStyle left = wb.createCellStyle();
+		left.setBorderLeft(BorderStyle.THICK);
+		CellStyle upLeftCorner = wb.createCellStyle();
+		upLeftCorner.setBorderLeft(BorderStyle.THICK);
+		upLeftCorner.setBorderTop(BorderStyle.THICK);
+		CellStyle downLeftCorner = wb.createCellStyle();
+		downLeftCorner.setBorderLeft(BorderStyle.THICK);
+		downLeftCorner.setBorderBottom(BorderStyle.THICK);
+		CellStyle upRightCorner = wb.createCellStyle();
+		upRightCorner.setBorderRight(BorderStyle.THICK);
+		upRightCorner.setBorderTop(BorderStyle.THICK);
+		CellStyle downRightCorner = wb.createCellStyle();
+		downRightCorner.setBorderRight(BorderStyle.THICK);
+		downRightCorner.setBorderBottom(BorderStyle.THICK);
+
+		for(int index_H = 1; index_H < 10; index_H++) {
+			Row row = sht.getRow(index_H);
+			for(int index_V = 1; index_V < 10; index_V++) {
+				Cell cell = row.getCell(index_V);
+
+				if(index_H == 1 || index_H == 4 || index_H == 7) {
+					if(index_V == 1 || index_V == 4 || index_V == 7) {
+						cell.setCellStyle(upLeftCorner);
+					} else if(index_V == 9) {
+						cell.setCellStyle(upRightCorner);
+					} else {
+						cell.setCellStyle(top);
+					}
+				} else if(index_V == 1 || index_V == 4 || index_V == 7) {
+					cell.setCellStyle(left);
+				} else if(index_V == 9) {
+					cell.setCellStyle(right);
+				}
+
+				if(index_H == 9) {
+					if(index_V == 1 || index_V == 4 || index_V == 7) {
+						cell.setCellStyle(downLeftCorner);
+					} else if(index_V == 9) {
+						cell.setCellStyle(downRightCorner);
+					} else {
+						cell.setCellStyle(bottom);
+					}
+				}
+			}
+			for(int index_V = 11; index_V < 20; index_V++) {
+				Cell cell = row.getCell(index_V);
+
+				if(index_H == 1 || index_H == 4 || index_H == 7) {
+					if(index_V == 11 || index_V == 14 || index_V == 17) {
+						cell.setCellStyle(upLeftCorner);
+					} else if(index_V == 19) {
+						cell.setCellStyle(upRightCorner);
+					} else {
+						cell.setCellStyle(top);
+					}
+				} else if(index_V == 11 || index_V == 14 || index_V == 17) {
+					cell.setCellStyle(left);
+				} else if(index_V == 19) {
+					cell.setCellStyle(right);
+				}
+
+				if(index_H == 9) {
+					if(index_V == 11 || index_V == 14 || index_V == 17) {
+						cell.setCellStyle(downLeftCorner);
+					} else if(index_V == 19) {
+						cell.setCellStyle(downRightCorner);
+					} else {
+						cell.setCellStyle(bottom);
+					}
+				}
+			}
+		}
 	}
 
 }
