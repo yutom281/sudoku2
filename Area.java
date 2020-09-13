@@ -135,4 +135,15 @@ public class Area {
 			box.recalc();
 		}
 	}
+
+	/**
+	 * 配置できる数の合計個数を返します。
+	 */
+	int countPossibles() {
+		int pCount = 0;
+		for(Box box: area) {
+			pCount += box.getPossibles().count();
+		}
+		return pCount;
+	}
 }

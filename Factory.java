@@ -1,6 +1,7 @@
 package sudoku;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class Factory extends FieldSolver{
 
@@ -24,25 +25,22 @@ public class Factory extends FieldSolver{
 			}
 		}
 
+		// 下準備
 		init();
 		backlog = backlog(field);
 
-		//while(check()) {
-			create(field, backlog);
-		//	init();
-			IOStream.debug(field);
-		//}
+		// 空のフィールドを埋める
+		fill(field, backlog);
+		IOStream.debug(field);
 
-		while(countTotalPossibles(field) < threshold) {
-			String message = reverseSolver();
-			if(message.equals("limit_reached")) {
-				break;
-			}
-		}
+		// 解答を限界まで取り除く
+		reverseSolver();
+		IOStream.debug(field);
+
+		// 指定された難易度に合わせて、解答を元に戻す
+		adjust(threshold);
 		System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
-		//★rollback(field, rollbackList);
-		//Collections.sort(field, new IndexSort());
-		//IOStream.debug(field);
+
 	}
 
 	ArrayList<Box> get(){
@@ -50,10 +48,15 @@ public class Factory extends FieldSolver{
 	}
 
 	/**
-	 * 全マスを解答済みの状態にします。
-	 * マスの解答順と解答は、制約の範囲内でランダムに決定します。
+	 * 白紙の全マスを解答済みの状態にします。
+	 * 解答はランダムに決定します。
+	 *
+	 * @param field 全Boxインスタンス
+	 * @param backlog 第一引数のコピー
+	 *
+	 * @return 解答済みの全Boxインスタンス
 	 */
-	String create(ArrayList<Box> field, ArrayList<Box> backlog) {
+	String fill(ArrayList<Box> field, ArrayList<Box> backlog) {
 
 		while(check()) {
 
@@ -75,7 +78,7 @@ public class Factory extends FieldSolver{
 			if(message.equals("stopped")) {
 				ArrayList<Box> deepBacklog = backlog(backlog);
 
-				String deepMessage = create(backlog, deepBacklog);
+				String deepMessage = fill(backlog, deepBacklog);
 
 				if(deepMessage.equals("solved")) {
 					message = message.replace(message, deepMessage);
@@ -108,79 +111,87 @@ public class Factory extends FieldSolver{
 	 * 解答が1パターンのみの場合に、配置済みの数を減らし、解答パターンが増えるかを調べます。
 	 * 数を取り除いたマスにそれ以外の数を配置し、解答(solver)に成功すれば、
 	 * 解答パターンが2つ以上存在することになり、問題として成立しないと判断します。
-	 *
-	 * ロジック
-	 * 解答済みのマスをランダムに選ぶ
-	 * ★（backlog上で）解答を0にして、配置できる数を再計算する
-	 * ★他のマスの配置できる数を再計算する
-	 * ★そのマスの配置できる数からもともとの解答を取り除く
-	 * ★をすべての対象マスについて繰り返し、かつ、元の解答を取り除いておく
-	 * そのマスでsolverを実行する
-	 * 解答成功→そのマスを復元、問題を出力して終了
-	 * 全仮解答が矛盾→そのマスをFieldでも0にする
-	 * 					solver前の状態(rollback直後)を復元する(contradicted, stopped)
-	 * 					replaceはrollbackを打ち消してしまうため使えない
-	 *
-	 * 元の解答を配置できない状態でマス同士の「依存関係」を構築するため、
-	 * replace(field, rndBox)時に必ずrndBoxをrollback()する
+	 * これを全マスについて繰り返し、取り除けるマスがなくなったら処理を終了します。
 	 */
-	String reverseSolver() {
+	void reverseSolver() {
 
-		ArrayList<Box> rollbackList = new ArrayList<>();
+		int rbCount = 0;
+		while(rbCount < 50) {
 
-		int rndIndex = (int)(80*Math.random());
-		Box rndBox = backlog.get(rndIndex);
-		if(rndBox.getAnswer() == 0) {
-			return "skip";
-		}
-		rndBox.rollback();
-		rollbackList.add(rndBox);
-		Possibles rePossibles = rndBox.getPossibles();
+			// バックアップのマスをランダムに選び、解答を仮除去する
+			int rndIndex = (int)(80*Math.random());
+			Box rndBox = backlog.get(rndIndex);
+			if(rndBox.getAnswer() == 0) {
+				continue;
+			}
+			rndBox.rollback();
 
-		if(rePossibles.count() == 0) {
-			//★
-			Box equivBox = field.get(rndIndex);
-			equivBox.rollback();
-			//★rollbackList.add(rndBox);
-			return "goNext";
-		}
-
-		for(int testNum: rePossibles.getValues()) {
-
-			String message = rndBox.solver(backlog, testNum);
-
-			if(message.equals("contradicted")) {
-				backlog = backlog(field);
-				rollback(backlog, rollbackList);
+			// そのマスにほかの数が置けなければ、仮除去を確定し、本体に反映する
+			Possibles rndPossibles = rndBox.getPossibles();
+			if(rndPossibles.count() == 0) {
+				Box equivBox = field.get(rndIndex);
+				equivBox.rollback();
+				rbCount++;
 				continue;
 			}
 
-			/*
-			 * 1.空白マスが増えてsolverを使用しないと計算を進められないとき
-			 * 2.solved: 別パターンの解答が見つかった時
-			 * →多重探索もrndBoxの配置できる数の情報を引き継がなければならない
-			 */
-			if(message.equals("stopped")) {
-				ArrayList<Box> deepBacklog = backlog(backlog);
-				rollback(backlog, rollbackList);
-				rollback(deepBacklog, rollbackList);
+			String message = "";
+			// ほかの数が置ける場合、それらを仮解答として解答が成功するか試す
+			for(int testNum: rndPossibles.getValues()) {
 
-				String deepMessage = solver(backlog, deepBacklog);
+				message = message.replace(message, rndBox.solver(backlog, testNum));
 
-				if(deepMessage.equals("solved")) {
-					message = message.replace(message, deepMessage);
+				if(message.equals("contradicted")) {
+					backlog = backlog(field);
+					replace(backlog, rndBox);
+					rndBox.rollback();
+					//backlog.forEach(logBox -> logBox.recalc());
+					continue;
+				}
+
+				if(message.equals("stopped")) {
+					ArrayList<Box> deepBacklog = backlog(backlog);
+					replace(deepBacklog, rndBox);
+					rndBox.recalc();
+
+					String deepMessage = solver(backlog, deepBacklog);
+
+					if(deepMessage.equals("solved")) {
+						message = message.replace(message, deepMessage);
+					}
+				}
+				// 解答に成功した場合、バックアップの仮除去を差し戻す
+				if(message.equals("solved")) {
+					rndBox.rollforward();
+					break;
 				}
 			}
-			// ★これが返るのが早すぎる
-			if(message.equals("solved")) {
-				return "limit_reached";
+			// すべての仮解答が失敗したら、仮除去を確定し、本体に反映する
+			if(message.equals("contradicted")) {
+				Box equivBox = field.get(rndIndex);
+				equivBox.rollback();
+				rbCount++;
 			}
 		}
-		//★
-		Box equivBox = field.get(rndIndex);
-		equivBox.rollback();
-		//★rollbackList.add(rndBox);
-		return "goNext";
+		init();
+	}
+
+	/**
+	 * 指定された難易度に合わせて、埋まっているマスを増やします。
+	 *
+	 * @param threshold 難易度を測る基準値
+	 */
+	void adjust(int threshold) {
+
+		while(countTotalPossibles(field) > threshold) {
+
+			Collections.sort(field, new PossiblesSort());
+			Box fwBox = field.get(0);
+			fwBox.rollforward();
+		}
+
+		Collections.sort(field, new IndexSort());
+		init();
 	}
 
 	/**
@@ -226,50 +237,3 @@ public class Factory extends FieldSolver{
 		return false;
 	}*/
 }
-
-
-/*
-String create(ArrayList<Box> field, ArrayList<Box> backlog) {
-
-	while(check()) {
-
-		int rndIndex = (int) (80*Math.random());
-		Box rndBox = backlog.get(rndIndex);
-		int rndAnswer = (int)(Math.random()*8+1);
-
-		if(rndBox.getAnswer() != 0 || ! rndBox.getPossibles().contains(rndAnswer)) {
-			continue;
-		}
-
-		// 以下、実行マス選択がランダムになる点以外、solver() と共通
-		String message = rndBox.solver(backlog, rndAnswer);
-
-		if(message.equals("contradicted")) {
-			backlog.clear();
-			backlog.addAll(backlog(field));
-			replace(backlog, rndBox);
-			continue;
-		}
-
-		if(message.equals("stopped")) {
-			ArrayList<Box> deepBacklog = backlog(backlog);
-			replace(deepBacklog, rndBox);
-
-			String deepMessage = solver(backlog, deepBacklog);
-
-			if(deepMessage.equals("solved")) {
-				message = message.replace(message, deepMessage);
-			}
-		}
-
-		if(message.equals("solved")) {
-			field.clear();
-			field.addAll(backlog);
-			return message;
-		}
-	}
-
-	return "contradicted";
-}*/
-
-

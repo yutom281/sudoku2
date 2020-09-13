@@ -15,8 +15,13 @@ public class Box {
 
 	private Possibles possibles;
 
-	private int rollbackedAnswer;
+	// "rb" stands for "rollbacked"
+	private int rbAnswer;
 
+	/**
+	 * コンストラクタ。行・列インデックス、ブロック識別番号、ある場合は解答を設定します。
+	 * 解答を設定した場合、配置できる数をすべて取り除きます。
+	 */
 	Box(Horizontal hor, Vertical vert, int initNumber){
 		this.hor = hor;
 		this.vert = vert;
@@ -43,6 +48,10 @@ public class Box {
 		return flaw;
 	}
 
+	/**
+	 * 同じ縦・横・ブロックにあるマスと紐づけます。
+	 * それらに置かれている数を取得し、自身に配置できる数を計算・初期化します。
+	 */
 	void init(ArrayList<Box> field) {
 
 		this.areaHorizontal = new Area(field, this, hor);
@@ -78,9 +87,18 @@ public class Box {
 		}
 		update();
 	}
+
+	/**
+	 * 配置できる数を取り除きます。
+	 */
 	void remove(ArrayList<Integer> notAnswer) {
 		possibles.remove(notAnswer);
 	}
+
+	/**
+	 * 自身の解答を、同じ縦横ブロックにあるマスの配置できる数から取り除きます。
+	 * また、自身に配置できる数をリセットします。
+	 */
 	void update() {
 		if(answer != 0) {
 			areaHorizontal.update(answer);
@@ -98,7 +116,6 @@ public class Box {
 	 *
 	 * @return "solved" 解答が完了した場合; "contradicted" 矛盾が生じた場合; "stopped" 解答できなくなった場合
 	 */
-
 	 String solver(ArrayList<Box> backup, int possibleNum) {
 
 		answer = possibleNum;
@@ -124,10 +141,16 @@ public class Box {
 
 	 }
 
+	 /**
+	  * 解答を取り消し、配置できる数を計算します。
+	  * その後、配置できる数から取り消した解答の数を取り除きます。
+	  * さらに、同じ縦横ブロックに配置できる数を再計算します。
+	  */
 	 void rollback() {
 		if(answer != 0) {
-			rollbackedAnswer = answer;
+			rbAnswer = answer;
 			answer = 0;
+
 		}
 		recalc();
 		areaHorizontal.recalc();
@@ -135,11 +158,38 @@ public class Box {
 		areaSquare.recalc();
 	 }
 
+	 /**
+	  * 配置できる数から rollback() により取り消した解答の数を取り除きます。
+	  */
 	 void recalc() {
-		 if(answer == 0) {
+		 if(answer == 0 && rbAnswer != 0) {
 			 possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
-			 possibles.remove(rollbackedAnswer);
+			 possibles.remove(rbAnswer);
 		 }
+	 }
+
+	 /**
+	  * rollback() により取り消した解答を元に戻します。
+	  * その後、その解答を同じ縦横ブロックの配置できる数から取り除きます。
+	  */
+	 void rollforward() {
+		 if(answer == 0 && rbAnswer != 0) {
+			 answer = rbAnswer;
+			 rbAnswer = 0;
+			 update();
+		 }
+	 }
+
+	 /**
+	  * 自身と同じ縦横ブロック内に配置できる数の合計個数を調べます。
+	  * 自身に配置できる数は含みません。
+	  */
+	 int countAreaPossibles() {
+		 int pCount = 0;
+		 pCount += areaHorizontal.countPossibles();
+		 pCount += areaVertical.countPossibles();
+		 pCount += areaSquare.countPossibles();
+		 return pCount;
 	 }
 
 	/**

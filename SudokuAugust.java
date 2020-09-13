@@ -8,10 +8,10 @@ public class SudokuAugust {
 
 	public enum Difficulty {
 
-		Easy(400),
-		Normal(500),
-		Hard(600),
-		Expert(700),
+		Easy(200),
+		Normal(350),
+		Hard(500),
+		Expert(650),
 		Impossible(100000);
 
 		private int threshold;

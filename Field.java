@@ -56,8 +56,7 @@ public class Field {
 	}
 
 	/**
-	 * すべてのマスを複製します。
-	 * 前回の計算結果を保存して、解き方を変更するか判断します。
+	 * すべてのマスの行列インデックス、解答、縦横ブロックの相互関係を複製し、配置できる数を初期化します。
 	 * 探索でも使用します。
 	 */
 	 static ArrayList<Box> backlog(ArrayList<Box> boxList) {

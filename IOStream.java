@@ -47,7 +47,7 @@ public class IOStream {
 	            	Vertical vert = new Vertical(index_V);
 	            	int initAnswer = 0;
 
-	            	if(cell.getNumericCellValue() != 0) {
+	            	if(cell != null) {
 	            		initAnswer = (int)cell.getNumericCellValue();
 	            	}
 
@@ -132,11 +132,10 @@ public class IOStream {
 
 			for(int index_H = 1; index_H < 10; index_H++) {
 				Row row = sheet.getRow(index_H);
-				row.setHeightInPoints(20);
 				for(int index_V = 11; index_V < 20; index_V++) {
 					Box currentBox = rawField.get(index);
 					sheet.setColumnWidth(index_V, 1024);
-					Cell cell = row.getCell(index_V);
+					Cell cell = row.createCell(index_V);
 					int answer = currentBox.getAnswer();
 					cell.setCellValue(answer);
 					index++;
