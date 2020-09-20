@@ -16,8 +16,29 @@ public class FieldSolver extends Field {
 	 * 探索アルゴリズムを開始します。コンストラクタを呼び出したFieldインスタンスより実行します。
 	 */
 	void solver() {
-		backlog = backlog(field);
+		backlog = createLog(field);
 		solver(field, backlog);
+	}
+
+	/**
+	* 探索アルゴリズム(Box引数なし、boolean引数なし定義)
+	 */
+	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup) {
+		return solver(boxList, backup, null, false);
+	}
+
+	/**
+	 * 探索アルゴリズム(Box引数なし定義)
+	 */
+	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup, boolean isRandom) {
+		return solver(boxList, backup, null, isRandom);
+	}
+
+	/**
+	 * 探索アルゴリズム(boolean引数なし定義)
+	 */
+	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup, Box execBox) {
+		return solver(boxList, backup, execBox, false);
 	}
 
 	/**
@@ -33,14 +54,24 @@ public class FieldSolver extends Field {
 	 *
 	 * @param boxList 復元の基準となる時点の field
 	 * @param backup boxList のログ
+	 * @param execBox 探索を開始するマスを指定する（第2引数 backup に紐づいていなければならない）
+	 * @param isRandom 探索順と仮解答の選択をランダムにする
 	 *
-	 * @return "contradicted" すべての仮解答で矛盾が生じた場合（二重探索にのみ発生）; "solved" 解答が完了した場合
+	 * @return "contradicted" すべての仮解答で矛盾が生じた場合; "solved" 解答が完了した場合
 	 */
-	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup) {
+	static String solver(ArrayList<Box> boxList, ArrayList<Box> backup, Box execBox, boolean isRandom) {
 
-		// 仮解答を配置するマス＝実行者を選択する。
+		// 仮解答を配置するマス（実行マス）を選択する。
 		Collections.sort(backup, new BoxSort());
 		Box rootBox = backup.get(0);
+		if(execBox != null && backup.contains(execBox)) {
+			rootBox = execBox;
+		}
+		if(isRandom) {
+			do {
+				rootBox = backup.get((int)(80*Math.random()));
+			} while(rootBox.getAnswer() != 0);
+		}
 
 		// 仮解答を選択し、探索を実行する。
 		for(int possibleNum: rootBox.getPossibles().getValues()) {
@@ -49,28 +80,22 @@ public class FieldSolver extends Field {
 
 			// 矛盾が生じた場合、バックトラックして次の仮解答に進む。
 			if(message.equals("contradicted")) {
-				backup.clear();
-				backup.addAll(backlog(boxList));
-				replace(backup, rootBox);
+				rollback(backup, boxList);
 				continue;
 			}
-
 			// 解答を続けられなくなった場合、現在の状態を保存し、二重で探索を実行する。
 			if(message.equals("stopped")) {
-				ArrayList<Box> deepBackup = backlog(backup);
-				replace(deepBackup, rootBox);
-
-				String deepMessage = solver(backup, deepBackup);
+				ArrayList<Box> deepBackup = createLog(backup);
+				String deepMessage = solver(backup, deepBackup, isRandom);
 
 				if(deepMessage.equals("solved")) {
 					message = message.replace(message, deepMessage);
 				}
 			}
-
 			// 解答が完了した場合、結果を反映して処理を終了する。
 			if(message.equals("solved")) {
-				boxList.clear();
-				boxList.addAll(backup);
+				// 引数の順序を逆にして結果反映に使用
+				rollback(boxList, backup);
 				Collections.sort(boxList, new IndexSort());
 				return message;
 			}
@@ -86,31 +111,44 @@ public class FieldSolver extends Field {
 	 *
 	 * @return {@code false} 未回答かつ配置できる数がないマスが存在する場合。
 	 */
-	boolean prove() {
+	boolean isContradicted() {
 		for(Box box: field) {
 			if(box.getAnswer() == 0 && box.getPossibles().count() == 0) {
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
-	/**
-	 * 探索のバックトラックにおいて、探索を実行中のマスを引き継ぎます。
-	 * 引き継いだマスと復元したフィールドを互いに紐づけるため、初期化も行います。
-	 *
-	 * @param boxList 復元した backlog
-	 * @param rootBox 探索実行中のBoxインスタンス
-	 */
-	 static void replace(ArrayList<Box> boxList, Box rootBox) {
-
+	 /**
+	  * ログに記録されている情報をコピーします。
+	  * もとのインスタンスが維持されます。
+	  *
+	  * @param boxList 回復するフィールド
+	  * @param logInfo ログとなるバックアップ
+	  */
+	static void rollback(ArrayList<Box> boxList, ArrayList<Box> logInfo) {
 		for(Box box: boxList) {
-			if(box.equals(rootBox)) {
-				boxList.remove(box);
-				boxList.add(rootBox);
+			Box log = getBox(logInfo, box);
+			box.copy(log);
+		}
+		for(Box box: boxList) {
+			box.recalc();
+		}
+	}
+
+	static Box getBox(ArrayList<Box> boxList, Box searcher) {
+		return getBox(boxList, searcher.getHorizontal(), searcher.getVertical());
+	}
+
+	static Box getBox(ArrayList<Box> boxList, Horizontal hor, Vertical vert) {
+		int index = 0;
+		for(Box box: boxList) {
+			if(box.getHorizontal().equal(hor) && box.getVertical().equal(vert)) {
 				break;
 			}
+			index++;
 		}
-		boxList.forEach(box -> box.init(boxList));
-	 }
+		return boxList.get(index);
+	}
 }

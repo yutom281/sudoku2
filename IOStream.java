@@ -156,42 +156,6 @@ public class IOStream {
 		}
 	}
 
-	// デバッグ、途中経過出力
-	void debug() {
-
-		output();
-
-		try {
-			Path path = Path.of("mondai.xlsx");
-	        String strPath = path.toAbsolutePath().toString();
-	        FileInputStream fis = new FileInputStream(strPath);
-			XSSFWorkbook workbook = XSSFWorkbookFactory.createWorkbook(fis);
-			XSSFSheet sheet = workbook.getSheet(sheetName);
-			int index = 0;
-
-			for(int index_H = 1; index_H < 10; index_H++) {
-				Row row = sheet.getRow(index_H);
-				row.setHeightInPoints(20);
-				for(int index_V = 21; index_V < 30; index_V++) {
-					Box currentBox = rawField.get(index);
-					sheet.setColumnWidth(index_V, 6200);
-					Cell cell = row.getCell(index_V);
-					cell.setCellValue(currentBox.getPossibles().getValues().toString());
-					index++;
-				}
-			}
-			fis.close();
-
-			FileOutputStream fos = new FileOutputStream(strPath);
-			workbook.write(fos);
-			workbook.close();
-			fos.close();
-
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	static void debug(ArrayList<Box> field) {
 
 		try {
@@ -216,6 +180,9 @@ public class IOStream {
 					index++;
 				}
 			}
+
+			drawLattice(workbook, sheet);
+
 			fis.close();
 
 			FileOutputStream fos = new FileOutputStream(strPath);
@@ -277,7 +244,7 @@ public class IOStream {
 		return this.rawField;
 	}
 
-	void drawLattice(Workbook wb, Sheet sht) {
+	static void drawLattice(Workbook wb, Sheet sht) {
 
 		CellStyle top = wb.createCellStyle();
 		top.setBorderTop(BorderStyle.THICK);
@@ -331,6 +298,9 @@ public class IOStream {
 			}
 			for(int index_V = 11; index_V < 20; index_V++) {
 				Cell cell = row.getCell(index_V);
+				if(cell == null) {
+					break;
+				}
 
 				if(index_H == 1 || index_H == 4 || index_H == 7) {
 					if(index_V == 11 || index_V == 14 || index_V == 17) {

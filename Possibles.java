@@ -6,7 +6,7 @@ import java.util.Collections;
 
 public class Possibles {
 
-	private Integer[] tmp = {1,2,3,4,5,6,7,8,9};
+	static private Integer[] tmp = {1,2,3,4,5,6,7,8,9};
 	private ArrayList<Integer> possibleNums = new ArrayList<>(Arrays.asList(tmp));
 
 	// コンストラクタ。Box に配置できる数を計算する
@@ -21,20 +21,24 @@ public class Possibles {
 		possibleNums.clear();
 	}
 
-	/* 引数を配置できる数から取り除く。配置する前に配置できる数がなくなることは
-	 * ありえないので、両者が完全に一致するときは取り除かない
+	/**
+	 * ダブル数字により、配置できる数を絞り込みます。
+	 * ダブル数字では、解答前に配置できる数がなくなることはありえないため、
+	 * 配置できる数と取り除く数が完全に一致するときは処理を行いません。
 	 */
-	void remove(ArrayList<Integer> notAnswer){
-		if(! possibleNums.equals(notAnswer)) {
-			possibleNums.removeAll(notAnswer);
+	void remove(ArrayList<Integer> notAnswerList){
+		if(! possibleNums.equals(notAnswerList)) {
+			possibleNums.removeAll(notAnswerList);
 		}
 	}
 
+	/**
+	 * 配置できる数を絞り込みます。
+	 * 探索では、「解答前に配置できる数がなくなること」をもって矛盾を判定するため、
+	 * ダブル数字とは異なり、このメソッドによる上記の発生を許容しています。
+	 */
 	void remove(int notAnswer) {
-		ArrayList<Integer> rapper = new ArrayList<>();
-		rapper.add(notAnswer);
-		//remove(rapper);
-		possibleNums.removeAll(rapper);
+		possibleNums.remove(Integer.valueOf(notAnswer));
 	}
 
 	int search(ArrayList<Integer> searcher){
@@ -82,4 +86,14 @@ public class Possibles {
 		}
 		return false;
 	}
+
+	void recalc(ArrayList<Integer> numsH, ArrayList<Integer> numsV, ArrayList<Integer> numsSQ) {
+		Integer[] tmp = {1,2,3,4,5,6,7,8,9};
+		possibleNums = new ArrayList<>(Arrays.asList(tmp));
+		possibleNums.removeAll(numsH);
+		possibleNums.removeAll(numsV);
+		possibleNums.removeAll(numsSQ);
+		Collections.sort(possibleNums);
+	}
+
 }

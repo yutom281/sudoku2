@@ -29,12 +29,11 @@ public class Field {
 	}
 
 	/**
-	 * マスごとに計算を実行します。
+	 * マスごとに解答を実行します。
 	 * 実行前にログを作成します。
 	 */
 	void run() {
-
-		backlog = backlog(field);
+		backlog = createLog(field);
 		//field.forEach(box -> box.calc());
 		for(Box box: field) {
 			box.calc();
@@ -46,49 +45,45 @@ public class Field {
 	 *
 	 * @return {@code true} 未解答のマスがある場合。
 	 */
-	boolean check() {
+	boolean isSolved() {
 		for(Box box: field) {
 			if(box.getAnswer() == 0) {
-				return true;
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 
 	/**
 	 * すべてのマスの行列インデックス、解答、縦横ブロックの相互関係を複製し、配置できる数を初期化します。
-	 * 探索でも使用します。
 	 */
-	 static ArrayList<Box> backlog(ArrayList<Box> boxList) {
+	 static ArrayList<Box> createLog(ArrayList<Box> boxList) {
 		ArrayList<Box> log = new ArrayList<>();
 		boxList.forEach(box -> {
-			Box logBox = box.copy();
-			log.add(logBox);
+			Box backBox = box.clone();
+			log.add(backBox);
 		});
-		log.forEach(logBox -> logBox.init(log));
+		log.forEach(backBox -> backBox.init(log));
 		return log;
 	}
 
 	/**
 	 * 現在の解き方からの移行を判断します。
-	 * 解答できなくなるか、解答が完了している場合に、次のブロックへ移行します。
+	 * 解答できなくなるか、解答が完了している場合に、移行します。
 	 *
 	 * @return {@code true} 前回から解答が変化していない場合。
 	 */
-	boolean changeMode() {
-
+	boolean isStuck() {
 		ArrayList<Integer> currentAnswers = new ArrayList<>();
 		ArrayList<Integer> logAnswers = new ArrayList<>();
 
 		field.forEach(box -> currentAnswers.add(box.getAnswer()));
-
 		if(backlog != null) {
-			backlog.forEach(logbox -> logAnswers.add(logbox.getAnswer()));
+			backlog.forEach(backBox -> logAnswers.add(backBox.getAnswer()));
 		}
 
 		String currAns = currentAnswers.toString();
 		String logAns = logAnswers.toString();
-
 		if(currAns.equals(logAns)) {
 			return true;
 		}
@@ -113,79 +108,38 @@ public class Field {
 	/**
 	 * 問題がゲームのルールに違反している場合、例外を返します。
 	 */
-	void inspect() throws InputException{
-
+	void inspect(boolean IO) throws InputException{
 		ArrayList<Box> flaw = new ArrayList<>();
-
 		for(Box box:field) {
 			flaw.addAll(box.inspect());
 		}
 		if(flaw.size() > 0) {
-			input.outputInspection(flaw);
+			if(IO == true) {
+				input.outputInspection(flaw);
+			}
 			throw new InputException("問題に誤りがあります。");
 		}
 	}
 
 	/**
-	 * 二つのフィールドインスタンスを比較します。
-	 *
-	 * @return [@code true] 同じ行番号・列番号を持つマスの解答がすべて等しい場合
+	 * （デバッグ）解答状況をコンソール出力します。
 	 */
-	boolean equals(Field anotherField) {
-
-		for(int index = 0; index < 81; index++) {
-
-			Box selfBox = getBox(index);
-			Box otherBox = anotherField.getBox(index);
-
-			int selfAnswer = selfBox.getAnswer();
-			int otherAnswer = otherBox.getAnswer();
-
-			if(selfAnswer != otherAnswer) {
-				return false;
+	void print(ArrayList<Box> boxList) {
+		String answers = "\n -----------------------------------\n";
+		for(int i = 0; i < 81; i++) {
+			if(i%9 == 0) {
+				answers += "| ";
+			}
+			Box box = boxList.get(i);
+			if(box.getAnswer() != 0) {
+				answers += (box.getAnswer()+" | ");
+			} else {
+				answers += "  | ";
+			}
+			if((i+1)%9 == 0) {
+				answers += "\n -----------------------------------\n";
 			}
 		}
-		return true;
-	}
-
-	/**
-	 * 指定した行番号・列番号のBoxインスタンスを返します。
-	 *
-	 * @param index this.fieldのインデックス
-	 * @return 指定したBoxインスタンス
-	 */
-	Box getBox(Horizontal hor, Vertical vert) {
-
-		int index = 0;
-		for(Box box: field) {
-			if(box.getHorizontal().equal(hor) && box.getVertical().equal(vert)) {
-				break;
-			}
-			index++;
-		}
-		// プログラムが正常なら、この処理には到達しない
-		//Box dummy = new Box(new Horizontal(0), new Vertical(0), 0);
-		return getBox(index);
-	}
-
-	Box getBox(int index) {
-
-		return field.get(index);
-	}
-
-	/**
-	 * （デバッグ用）
-	 * 解答状況と、マスごとに配置できる数の一覧をExcelに出力します。
-	 */
-	void debug() {
-		input.debug();
-	}
-
-	void print() {
-		ArrayList<Integer> currentAnswers = new ArrayList<>();
-		field.forEach(box -> currentAnswers.add(box.getAnswer()));
-		String currAns = currentAnswers.toString();
-		System.out.println(currAns);
-		System.out.println(currentAnswers.size());
+		System.out.println(answers);
 	}
 }

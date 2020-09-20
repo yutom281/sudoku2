@@ -9,13 +9,11 @@ public class Factory extends FieldSolver{
 	//ArrayList<Box> rollbackList = new ArrayList<>();
 
 	/**
-	 * コンストラクタ。空のBoxインスタンスとフィールドを作成します。
+	 * コンストラクタ。問題を作成します。
 	 *
-	 * threshold の案２：多重探索の深さで難易度を決定する
-	 * easy = 0, normal = 2~3, hard = 4^5, impossible = limit_reached
+	 * @param threshold 難易度ごとの基準値
 	 */
 	public Factory(int threshold) {
-
 		super(blankField);
 
 		for(int column = 1; column < 10; column++) {
@@ -24,23 +22,22 @@ public class Factory extends FieldSolver{
 				blankField.add(box);
 			}
 		}
-
-		// 下準備
 		init();
-		backlog = backlog(field);
+		backlog = createLog(field);
 
 		// 空のフィールドを埋める
-		fill(field, backlog);
+		while(! isSolved()) {
+			solver(field, backlog, true);
+		}
 		IOStream.debug(field);
-
-		// 解答を限界まで取り除く
+		// マスを限界まで取り消す
 		reverseSolver();
-		IOStream.debug(field);
 
 		// 指定された難易度に合わせて、解答を元に戻す
 		adjust(threshold);
-		System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
-
+		print(field);
+		//System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
+		//System.out.println("初期数の個数合計：" + countFilledBox(field));
 	}
 
 	ArrayList<Box> get(){
@@ -48,58 +45,9 @@ public class Factory extends FieldSolver{
 	}
 
 	/**
-	 * 白紙の全マスを解答済みの状態にします。
-	 * 解答はランダムに決定します。
-	 *
-	 * @param field 全Boxインスタンス
-	 * @param backlog 第一引数のコピー
-	 *
-	 * @return 解答済みの全Boxインスタンス
-	 */
-	String fill(ArrayList<Box> field, ArrayList<Box> backlog) {
-
-		while(check()) {
-
-			Box rndBox = backlog.get((int)(80*Math.random()));
-			if(rndBox.getAnswer() != 0) {
-				continue;
-			}
-			Possibles possibles = rndBox.getPossibles();
-			int rndAnswer = possibles.get((int)(Math.random()*(possibles.count()-1)));
-
-			String message = rndBox.solver(backlog, rndAnswer);
-
-			if(message.equals("contradicted")) {
-				backlog.clear();
-				backlog.addAll(backlog(field));
-				continue;
-			}
-
-			if(message.equals("stopped")) {
-				ArrayList<Box> deepBacklog = backlog(backlog);
-
-				String deepMessage = fill(backlog, deepBacklog);
-
-				if(deepMessage.equals("solved")) {
-					message = message.replace(message, deepMessage);
-				}
-			}
-
-			if(message.equals("solved")) {
-				field.clear();
-				field.addAll(backlog);
-				return message;
-			}
-		}
-		return "contradicted";
-
-	}
-
-	/**
 	 * 配置できる数の個数の合計を返します。
 	 */
 	static int countTotalPossibles(ArrayList<Box> boxList) {
-
 		int totalPossibles = 0;
 		for(Box box: boxList) {
 			totalPossibles += box.getPossibles().count();
@@ -107,133 +55,116 @@ public class Factory extends FieldSolver{
 		return totalPossibles;
 	}
 
-	/**
-	 * 解答が1パターンのみの場合に、配置済みの数を減らし、解答パターンが増えるかを調べます。
-	 * 数を取り除いたマスにそれ以外の数を配置し、解答(solver)に成功すれば、
-	 * 解答パターンが2つ以上存在することになり、問題として成立しないと判断します。
-	 * これを全マスについて繰り返し、取り除けるマスがなくなったら処理を終了します。
-	 */
-	void reverseSolver() {
-
-		int rbCount = 0;
-		while(rbCount < 50) {
-
-			// バックアップのマスをランダムに選び、解答を仮除去する
-			int rndIndex = (int)(80*Math.random());
-			Box rndBox = backlog.get(rndIndex);
-			if(rndBox.getAnswer() == 0) {
-				continue;
-			}
-			rndBox.rollback();
-
-			// そのマスにほかの数が置けなければ、仮除去を確定し、本体に反映する
-			Possibles rndPossibles = rndBox.getPossibles();
-			if(rndPossibles.count() == 0) {
-				Box equivBox = field.get(rndIndex);
-				equivBox.rollback();
-				rbCount++;
-				continue;
-			}
-
-			String message = "";
-			// ほかの数が置ける場合、それらを仮解答として解答が成功するか試す
-			for(int testNum: rndPossibles.getValues()) {
-
-				message = message.replace(message, rndBox.solver(backlog, testNum));
-
-				if(message.equals("contradicted")) {
-					backlog = backlog(field);
-					replace(backlog, rndBox);
-					rndBox.rollback();
-					//backlog.forEach(logBox -> logBox.recalc());
-					continue;
-				}
-
-				if(message.equals("stopped")) {
-					ArrayList<Box> deepBacklog = backlog(backlog);
-					replace(deepBacklog, rndBox);
-					rndBox.recalc();
-
-					String deepMessage = solver(backlog, deepBacklog);
-
-					if(deepMessage.equals("solved")) {
-						message = message.replace(message, deepMessage);
-					}
-				}
-				// 解答に成功した場合、バックアップの仮除去を差し戻す
-				if(message.equals("solved")) {
-					rndBox.rollforward();
-					break;
-				}
-			}
-			// すべての仮解答が失敗したら、仮除去を確定し、本体に反映する
-			if(message.equals("contradicted")) {
-				Box equivBox = field.get(rndIndex);
-				equivBox.rollback();
-				rbCount++;
+	static int countFilledBox(ArrayList<Box> boxList) {
+		int filled = 0;
+		for(Box box: boxList) {
+			if(box.getAnswer() != 0) {
+				filled++;
 			}
 		}
-		init();
+		return filled;
 	}
 
 	/**
-	 * 指定された難易度に合わせて、埋まっているマスを増やします。
+	 * 逆算により、解答から問題を作成します。
+	 * 全マス解答済みの状態から、解答が一意に定まる（問題として成立する）限界までマスを取り消すメソッドです。
+	 * 核となるロジックは探索と同じものであり、微分に対する積分のような逆演算ではありません。
 	 *
-	 * @param threshold 難易度を測る基準値
+	 * 手順は次のとおりです。1マスを選択して取り消し、配置できる数を再計算します。
+	 * その後、探索を実行し、他の解答パターンが存在するか調べます。
+	 * 存在しない場合、そのマスを取り消しても問題の解答は一意のままです。
+	 * これを、それ以上どのマスを取り消しても問題が成立しない状態まで繰り返します。
+	 *
+	 * 準備処理として、探索可能なマスを1つ以上発生させるため、
+	 * 必要最低限のマス（5~6個）を無条件に取り消します。
+	 * これにより、探索前に限界以上のマスが取り消されることを回避します。
+	 */
+	void reverseSolver() {
+		// 準備処理
+		Collections.shuffle(field);
+		//Box box1st = field.get(0);
+		//int rbAnswer1st = box1st.rollback();
+		Box rbBox = field.get(0);
+		int rbAnswer = rbBox.rollback();
+		while(findSolvableBox(field).size() == 0) {
+			// "rbBox" for "rollbacked box"
+			/*
+			Box rbBox = box1st;
+			int rbAnswer = rbAnswer1st;
+			*/
+			ArrayList<Box> areaBoxList = rbBox.getAreaBox(rbAnswer, "NOT");
+			Collections.shuffle(areaBoxList);
+			Box nextBox = areaBoxList.get(0);
+			int rbAnswerNext = nextBox.rollback();
+			rbBox = nextBox;
+			rbAnswer = rbAnswerNext;
+		}
+		// メイン処理
+		for(int i = 0; i < 81; i++) {
+			Box box = field.get(i);
+			if(box.getAnswer() == 0) {
+				continue;
+			}
+			// 取消
+			box.rollback();
+			// 同期
+			backlog = createLog(field);
+			// 探索用に作成
+			ArrayList<Box> slvBacklog = createLog(backlog);
+			// 探索可能なマスを取得
+			ArrayList<Box> solvables = findSolvableBox(slvBacklog);
+
+			for(Box slvBox: solvables) {
+				// 元の解答を取得し、配置できる数から削除
+				int slvAnswer = slvBox.rollback();
+				slvBox.getPossibles().remove(slvAnswer);
+				// 探索
+				String message = solver(backlog, slvBacklog, slvBox);
+				// 解答に成功した場合、取消と探索をすべて差し戻して次のマスに進む
+				if(message.equals("solved")) {
+					box.rollforward();
+					rollback(backlog, field);
+					break;
+				}
+				// 解答できなかった場合、探索を差し戻して次の探索可能マスに進む
+				if(message.equals("contradicted")) {
+					rollback(backlog, field);
+					rollback(slvBacklog, backlog);
+				}
+			}
+			//すべての探索可能マスで解答できなかった場合、取消を確定し、次のマスに進む
+		}
+		Collections.sort(field, new IndexSort());
+	}
+
+	/**
+	 * 探索を実行可能なマスを取得します。
+	 *
+	 * @param boxList 探索するフィールドまたはバックアップ
+	 *
+	 * @return solvables 探索可能なマスのリスト
+	 */
+	ArrayList<Box> findSolvableBox(ArrayList<Box> boxList) {
+		ArrayList<Box> solvables = new ArrayList<>();
+		for(Box box: boxList) {
+			if(box.getPossibles().count() >= 2) {
+				solvables.add(box);
+			}
+		}
+		return solvables;
+	}
+
+	/**
+	 * 指定された難易度に合わせて、取り消したマスを復元します。
+	 *
+	 * @param threshold 難易度ごとの、配置できる数の個数合計の上限値
 	 */
 	void adjust(int threshold) {
-
 		while(countTotalPossibles(field) > threshold) {
-
 			Collections.sort(field, new PossiblesSort());
 			Box fwBox = field.get(0);
 			fwBox.rollforward();
 		}
-
 		Collections.sort(field, new IndexSort());
-		init();
 	}
-
-	/**
-	 * ロジック
-	 * 解答済みのマスをランダムに選ぶ
-	 * ★解答を0にして、配置できる数を再計算する
-	 * ★areaの配置できる数を再計算する
-	 * ★全対象マスの配置できる数からもともとの解答を取り除く
-	 * ★をすべての対象マスについて繰り返し、かつ、元の解答を取り除いておく
-	 *
-	 * ※解答済みのマスのpossiblesに影響してはならない
-	 * ※ほかのマスの更新に自身のpossiblesが影響されてはならない
-	 */
-	static void rollback(ArrayList<Box> boxList, ArrayList<Box> rollbackList) {
-
-		for(Box box: boxList) {
-			for(Box rollBox: rollbackList) {
-				if(box.equals(rollBox)) {
-					box.rollback();
-				}
-			}
-		}
-	}
-
-	/**
-	 *
-	 */
-/*	boolean checkIfExist(ArrayList<Box> backup, ArrayList<ArrayList<Box>> fieldList) {
-
-		ArrayList<Integer> answersB = new ArrayList<>();
-		backup.forEach(box -> answersB.add(box.getAnswer()));
-		String strB = answersB.toString();
-
-		ArrayList<Integer> answersF = new ArrayList<>();
-
-		for(ArrayList<Box> field: fieldList) {
-			field.forEach(box -> answersF.add(box.getAnswer()));
-			String strF = answersF.toString();
-			if(strB.equals(strF)) {
-				return true;
-			}
-		}
-		return false;
-	}*/
 }

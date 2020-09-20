@@ -2,7 +2,7 @@ package sudoku;
 
 import java.util.ArrayList;
 
-public class Box {
+public class Box implements Cloneable{
 
 	private Horizontal hor;
 	private Vertical vert;
@@ -53,7 +53,6 @@ public class Box {
 	 * それらに置かれている数を取得し、自身に配置できる数を計算・初期化します。
 	 */
 	void init(ArrayList<Box> field) {
-
 		this.areaHorizontal = new Area(field, this, hor);
 		this.areaVertical = new Area(field, this, vert);
 		this.areaSquare = new Area(field, this, square);
@@ -91,7 +90,14 @@ public class Box {
 	/**
 	 * 配置できる数を取り除きます。
 	 */
-	void remove(ArrayList<Integer> notAnswer) {
+	void remove(ArrayList<Integer> notAnswerList) {
+		possibles.remove(notAnswerList);
+	}
+
+	/**
+	 * 配置できる数を取り除きます。
+	 */
+	void remove(int notAnswer) {
 		possibles.remove(notAnswer);
 	}
 
@@ -124,15 +130,22 @@ public class Box {
 		// Fieldクラス、FieldSolverクラスのメソッドを使用する
 		FieldSolver fsolver = new FieldSolver(backup);
 
-		while(! fsolver.changeMode()) {
+		try {
+			fsolver.inspect(false);
+		} catch (InputException ie) {
+			answer = 0;
+			return "contradicted";
+		}
+
+		while(! fsolver.isStuck()) {
 			fsolver.run();
 		}
 
-		if(! fsolver.check()) {
+		if(fsolver.isSolved()) {
 			return "solved";
 		}
 
-		if(! fsolver.prove()) {
+		if(fsolver.isContradicted()) {
 			answer = 0;
 			return "contradicted";
 		}
@@ -142,30 +155,28 @@ public class Box {
 	 }
 
 	 /**
-	  * 解答を取り消し、配置できる数を計算します。
-	  * その後、配置できる数から取り消した解答の数を取り除きます。
-	  * さらに、同じ縦横ブロックに配置できる数を再計算します。
+	  * 解答を取り消し、自身と周囲の配置できる数を再計算します。
+	  * すでに取り消されている場合、再計算は行わず、戻り値のみを返します。
+	  *
+	  * @return rbAnswer 取り消した解答
 	  */
-	 void rollback() {
+	 int rollback() {
 		if(answer != 0) {
 			rbAnswer = answer;
 			answer = 0;
-
+			recalc();
+			areaHorizontal.recalc();
+			areaVertical.recalc();
+			areaSquare.recalc();
 		}
-		recalc();
-		areaHorizontal.recalc();
-		areaVertical.recalc();
-		areaSquare.recalc();
+		return rbAnswer;
 	 }
 
 	 /**
-	  * 配置できる数から rollback() により取り消した解答の数を取り除きます。
+	  * 配置できる数を再計算します。
 	  */
 	 void recalc() {
-		 if(answer == 0 && rbAnswer != 0) {
-			 possibles = new Possibles(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
-			 possibles.remove(rbAnswer);
-		 }
+		possibles.recalc(areaHorizontal.getNumbers(),areaVertical.getNumbers(),areaSquare.getNumbers());
 	 }
 
 	 /**
@@ -181,7 +192,7 @@ public class Box {
 	 }
 
 	 /**
-	  * 自身と同じ縦横ブロック内に配置できる数の合計個数を調べます。
+	  * 自身の縦横ブロック内に配置できる数の合計個数を調べます。
 	  * 自身に配置できる数は含みません。
 	  */
 	 int countAreaPossibles() {
@@ -192,13 +203,70 @@ public class Box {
 		 return pCount;
 	 }
 
+	 /**
+	  * 自身の縦横ブロック内で探索を実行可能なマスを返します。
+	  * 「実行可能」とは、「配置できる数が2個以上存在する」ことを指します。
+	  */
+	 ArrayList<Box> findSolvableBox() {
+		 ArrayList<Box> solvables = new ArrayList<>();
+		 solvables.addAll(areaHorizontal.findSolvableBox());
+		 solvables.addAll(areaVertical.findSolvableBox());
+		 solvables.addAll(areaSquare.findSolvableBox());
+		 return solvables;
+	 }
+
+	 /**
+	  * 自身の縦横ブロック内で検索条件に一致するマスを返します。
+	  *
+	  * @param answer 解答の数
+	  */
+	 ArrayList<Box> getAreaBox(int answer) {
+		 return getAreaBox(answer, "AND");
+	 }
+
+	 /**
+	  * 自身の縦横ブロック内で検索条件に一致するマスを返します。
+	  *
+	  * @param answer 解答の数
+	  * @param param 第一引数との一致または不一致
+	  */
+	 ArrayList<Box> getAreaBox(int answer, String param) {
+		 ArrayList<Box> results = new ArrayList<>();
+		 if(param.equals("NOT")) {
+			 results.add(areaHorizontal.getBox(answer, param));
+			 results.add(areaVertical.getBox(answer, param));
+			 results.add(areaSquare.getBox(answer, param));
+		 }
+		 if(param.equals("AND")) {
+			 results.add(areaHorizontal.getBox(answer, true));
+			 results.add(areaVertical.getBox(answer, true));
+			 results.add(areaSquare.getBox(answer, true));
+		 }
+		 return results;
+	}
+
 	/**
-	 * 自身のコピーを作成します。
+	 * 自身の複製を作成します。
 	 * 探索時、前の分岐点に戻るため（バックトラック）に使用します。
+	 * もし rollback されている場合、取り消した解答も取得します。
 	 */
-	Box copy(){
-		Box replica = new Box(this.hor, this.vert, this.answer);
-		return replica;
+	public Box clone(){
+		Box clone = new Box(this.hor, this.vert, this.answer);
+		if(this.rbAnswer != 0) {
+			clone.rbAnswer = this.rbAnswer;
+		}
+		return clone;
+	}
+
+	/**
+	 * ログに記録されている自身の情報をコピーします。
+	 * もとのインスタンスが維持されます。
+	 */
+    void copy(Box logInfo) {
+    	if(this.hor == logInfo.hor && this.vert == logInfo.vert) {
+			this.answer = logInfo.answer;
+			this.rbAnswer = logInfo.rbAnswer;
+    	}
 	}
 
 	/**

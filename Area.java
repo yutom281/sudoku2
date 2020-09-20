@@ -7,14 +7,13 @@ import java.util.Map;
 public class Area {
 
 	private ArrayList<Box> area = new ArrayList<>();
-	private ArrayList<Integer> numbers = new ArrayList<>();
 
 	Area(ArrayList<Box> field, Box caller, Horizontal hor){
 		field.forEach(box -> {
 			Horizontal boxHor = box.getHorizontal();
 			if(hor.equal(boxHor) && (! box.equals(caller))) {
 				area.add(box);
-				numbers.add(box.getAnswer());
+				//numbers.add(box.getAnswer());
 			}
 		});
 	}
@@ -24,7 +23,7 @@ public class Area {
 			Vertical boxVert = box.getVertical();
 			if(vert.equal(boxVert) && (! box.equals(caller))) {
 				area.add(box);
-				numbers.add(box.getAnswer());
+				//numbers.add(box.getAnswer());
 			}
 		});
 	}
@@ -32,13 +31,15 @@ public class Area {
 		field.forEach(box -> {
 			if(square == box.getSquare() && (! box.equals(caller))) {
 				area.add(box);
-				numbers.add(box.getAnswer());
+				//numbers.add(box.getAnswer());
 			}
 		});
 	}
 
 	ArrayList<Integer> getNumbers() {
-		return this.numbers;
+		ArrayList<Integer> numbers = new ArrayList<>();
+		area.forEach(box -> numbers.add(box.getAnswer()));
+		return numbers;
 	}
 
 	// N国同盟（ダブル数字）を計算する
@@ -80,10 +81,8 @@ public class Area {
 	}
 
 	void update(int answer) {
-		ArrayList<Integer> notAnswer = new ArrayList<>();
-		notAnswer.add(answer);
 		for(Box box: area) {
-			box.remove(notAnswer);
+			box.remove(answer);
 		}
 	}
 
@@ -116,20 +115,6 @@ public class Area {
 	/**
 	 * Box.rollback()に呼び出されます。
 	 */
-	/*
-	void rollback(int oldAnswer) {
-
-		for(Box box: area) {
-			if(box.getAnswer() == 0) {
-				box.getPossibles().getValues().add(oldAnswer);
-			}
-		}
-	}
-	*/
-
-	/**
-	 * Box.rollback()に呼び出されます。
-	 */
 	void recalc() {
 		for(Box box: area) {
 			box.recalc();
@@ -145,5 +130,38 @@ public class Area {
 			pCount += box.getPossibles().count();
 		}
 		return pCount;
+	}
+
+	Box getBox(int answer, String param) {
+		Box box = area.get((int)(Math.random()*7.99));
+		if(box.getAnswer() != 0 && box.getAnswer() != answer) {
+			return box;
+		}
+		return getBox(answer, param);
+	}
+
+	Box getBox(int index) {
+		return getBox(index, false);
+	}
+
+	Box getBox(int param, boolean searchByAnswer) {
+		if(searchByAnswer) {
+			for(Box box: area) {
+				if(box.getAnswer() == param) {
+					return box;
+				}
+			}
+		}
+		return null;
+	}
+
+	ArrayList<Box> findSolvableBox() {
+		ArrayList<Box> solvables = new ArrayList<>();
+		for(Box box: area) {
+			if(box.getPossibles().count() > 1) {
+				solvables.add(box);
+			}
+		}
+		return solvables;
 	}
 }
