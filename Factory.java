@@ -31,15 +31,16 @@ public class Factory extends FieldSolver{
 		}
 		// （デバッグ）埋めたフィールドを出力
 		IOStream.debug(field);
-		
+
 		// マスを限界まで取り消す
 		reverseSolver();
 
 		// 指定された難易度に合わせて、解答を元に戻す
 		adjust(threshold);
-		
+
 		// コンソール出力
 		print(field);
+		System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
 	}
 
 	/**
@@ -58,19 +59,19 @@ public class Factory extends FieldSolver{
 	 */
 	void reverseSolver() {
 		// （準備処理）
+		// 探索可能なマスを発生させる
 		Collections.shuffle(field);
 		// 取消
 		Box rbBox = field.get(0);
 		int rbAnswer = rbBox.rollback();
 		// マスAに置ける数が2つある ← このとき、同じ縦or横orブロックのマスBが空である
-		// ← マスBが空であるとき、マスBに置ける数が2つある ← ......のループ処理を、
-		// マスAが条件を満たすまで繰り返す
+		// ← マスBが空であるとき、マスBに置ける数が2つある ← ......のループ処理
 		while(findSolvableBox(field).size() == 0) {
 			// 取り消したマスの縦横ブロックから1マス取得
 			ArrayList<Box> areaBoxList = rbBox.getAreaBox(rbAnswer, "NOT");
 			Collections.shuffle(areaBoxList);
 			Box nextBox = areaBoxList.get(0);
-			// 取消＋次ループの起点に設定
+			// 取消＋次の起点に設定
 			int rbAnswerNext = nextBox.rollback();
 			rbBox = nextBox;
 			rbAnswer = rbAnswerNext;
@@ -83,20 +84,18 @@ public class Factory extends FieldSolver{
 			if(box.getAnswer() == 0) {
 				continue;
 			}
-			// 取消
 			box.rollback();
-			// 探索用バックアップ作成
 			backlog = createLog(field);
 			ArrayList<Box> slvBacklog = createLog(backlog);
 			// 探索可能なマスを取得
 			ArrayList<Box> solvables = findSolvableBox(slvBacklog);
-			
+
+			// 全解答パターンを調べる
 			for(Box slvBox: solvables) {
-				// 計算量を減らすため、探索マスにもともと置かれていた数を取得、
-				// 配置できる数から削除し、元の解答が発生しないようにする
+				// 最初の解答を発生させないため、そのとき置かれていた数を置けなくする
 				int slvAnswer = slvBox.rollback();
 				slvBox.getPossibles().remove(slvAnswer);
-				
+
 				String message = solver(backlog, slvBacklog, slvBox);
 				// 解答に成功した場合、取消前の状態に戻して、次の取消に進む
 				if(message.equals("solved")) {
@@ -104,10 +103,12 @@ public class Factory extends FieldSolver{
 					rollback(backlog, field);
 					break;
 				}
-				// 解答できなかった場合、取消後探索前の状態に戻して、次の探索可能マスに進む
+				// 解答できなかった場合、取消後・探索前の状態に戻して、次の探索可能マスに進む
 				if(message.equals("contradicted")) {
 					rollback(backlog, field);
 					rollback(slvBacklog, backlog);
+					// ＋こうすると、ループ中すでに探索したパターンも出なくなる
+					slvBox.rollforward();
 				}
 			}
 			//すべての探索可能マスで解答できなかった場合、取消を確定し、次の取消に進む
@@ -145,7 +146,7 @@ public class Factory extends FieldSolver{
 		}
 		Collections.sort(field, new IndexSort());
 	}
-	
+
 	/**
 	 * 配置できる数の個数の合計を返します。
 	 *
@@ -160,15 +161,15 @@ public class Factory extends FieldSolver{
 		}
 		return totalPossibles;
 	}
-	
+
 	// getter
 	ArrayList<Box> get(){
 		return field;
 	}
-	
-	
+
+
 	// （デバッグ）
-	//System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
+	//
 	//System.out.println("初期数の個数合計：" + countFilledBox(field));
 	/*
 	static int countFilledBox(ArrayList<Box> boxList) {
