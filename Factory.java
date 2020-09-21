@@ -29,40 +29,17 @@ public class Factory extends FieldSolver{
 		while(! isSolved()) {
 			solver(field, backlog, true);
 		}
+		// （デバッグ）埋めたフィールドを出力
 		IOStream.debug(field);
+		
 		// マスを限界まで取り消す
 		reverseSolver();
 
 		// 指定された難易度に合わせて、解答を元に戻す
 		adjust(threshold);
+		
+		// コンソール出力
 		print(field);
-		//System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
-		//System.out.println("初期数の個数合計：" + countFilledBox(field));
-	}
-
-	ArrayList<Box> get(){
-		return field;
-	}
-
-	/**
-	 * 配置できる数の個数の合計を返します。
-	 */
-	static int countTotalPossibles(ArrayList<Box> boxList) {
-		int totalPossibles = 0;
-		for(Box box: boxList) {
-			totalPossibles += box.getPossibles().count();
-		}
-		return totalPossibles;
-	}
-
-	static int countFilledBox(ArrayList<Box> boxList) {
-		int filled = 0;
-		for(Box box: boxList) {
-			if(box.getAnswer() != 0) {
-				filled++;
-			}
-		}
-		return filled;
 	}
 
 	/**
@@ -70,36 +47,35 @@ public class Factory extends FieldSolver{
 	 * 全マス解答済みの状態から、解答が一意に定まる（問題として成立する）限界までマスを取り消すメソッドです。
 	 * 核となるロジックは探索と同じものであり、微分に対する積分のような逆演算ではありません。
 	 *
-	 * 手順は次のとおりです。1マスを選択して取り消し、配置できる数を再計算します。
+	 * まず、1マスを選択して取り消し、配置できる数を再計算します。
 	 * その後、探索を実行し、他の解答パターンが存在するか調べます。
 	 * 存在しない場合、そのマスを取り消しても問題の解答は一意のままです。
 	 * これを、それ以上どのマスを取り消しても問題が成立しない状態まで繰り返します。
 	 *
-	 * 準備処理として、探索可能なマスを1つ以上発生させるため、
+	 * 準備処理として、探索可能な（配置できる数を2つ以上もつ）マスを発生させるため、
 	 * 必要最低限のマス（5~6個）を無条件に取り消します。
 	 * これにより、探索前に限界以上のマスが取り消されることを回避します。
 	 */
 	void reverseSolver() {
-		// 準備処理
+		// （準備処理）
 		Collections.shuffle(field);
-		//Box box1st = field.get(0);
-		//int rbAnswer1st = box1st.rollback();
+		// 取消
 		Box rbBox = field.get(0);
 		int rbAnswer = rbBox.rollback();
+		// マスAに置ける数が2つある ← このとき、同じ縦or横orブロックのマスBが空である
+		// ← マスBが空であるとき、マスBに置ける数が2つある ← ......のループ処理を、
+		// マスAが条件を満たすまで繰り返す
 		while(findSolvableBox(field).size() == 0) {
-			// "rbBox" for "rollbacked box"
-			/*
-			Box rbBox = box1st;
-			int rbAnswer = rbAnswer1st;
-			*/
+			// 取り消したマスの縦横ブロックから1マス取得
 			ArrayList<Box> areaBoxList = rbBox.getAreaBox(rbAnswer, "NOT");
 			Collections.shuffle(areaBoxList);
 			Box nextBox = areaBoxList.get(0);
+			// 取消＋次ループの起点に設定
 			int rbAnswerNext = nextBox.rollback();
 			rbBox = nextBox;
 			rbAnswer = rbAnswerNext;
 		}
-		// メイン処理
+		// （メイン処理）
 		for(int i = 0; i < 81; i++) {
 			Box box = field.get(i);
 			if(box.getAnswer() == 0) {
@@ -167,4 +143,40 @@ public class Factory extends FieldSolver{
 		}
 		Collections.sort(field, new IndexSort());
 	}
+	
+	/**
+	 * 配置できる数の個数の合計を返します。
+	 *
+	 * @param boxList 調べるフィールドまたはバックアップ
+	 *
+	 * @return totalPossibles 個数合計
+	 */
+	static int countTotalPossibles(ArrayList<Box> boxList) {
+		int totalPossibles = 0;
+		for(Box box: boxList) {
+			totalPossibles += box.getPossibles().count();
+		}
+		return totalPossibles;
+	}
+	
+	// getter
+	ArrayList<Box> get(){
+		return field;
+	}
+	
+	
+	// （デバッグ）
+	//System.out.println("配置できる数の個数合計：" + countTotalPossibles(field));
+	//System.out.println("初期数の個数合計：" + countFilledBox(field));
+	/*
+	static int countFilledBox(ArrayList<Box> boxList) {
+		int filled = 0;
+		for(Box box: boxList) {
+			if(box.getAnswer() != 0) {
+				filled++;
+			}
+		}
+		return filled;
+	}
+	*/
 }
