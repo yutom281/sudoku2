@@ -76,7 +76,8 @@ public class Factory extends FieldSolver{
 			rbAnswer = rbAnswerNext;
 		}
 		// （メイン処理）
-		// 全マスをひとつずつ取り消し、
+		// 全マスをひとつずつ取り消し、その度に元の解答以外の全解答パターンを調べる
+		// 一度でも解答に成功したら、そのマスは取り消せない
 		for(int i = 0; i < 81; i++) {
 			Box box = field.get(i);
 			if(box.getAnswer() == 0) {
@@ -84,19 +85,18 @@ public class Factory extends FieldSolver{
 			}
 			// 取消
 			box.rollback();
-			// ログ作成
+			// 探索用バックアップ作成
 			backlog = createLog(field);
-			// 探索用ログ作成
 			ArrayList<Box> slvBacklog = createLog(backlog);
 			// 探索可能なマスを取得
 			ArrayList<Box> solvables = findSolvableBox(slvBacklog);
-
+			
 			for(Box slvBox: solvables) {
-				// 計算量を減らすため、探索を開始する１マスの元の解答を取得、
-				// 配置できる数から削除し、同じ解答が発生しないようにする
+				// 計算量を減らすため、探索マスにもともと置かれていた数を取得、
+				// 配置できる数から削除し、元の解答が発生しないようにする
 				int slvAnswer = slvBox.rollback();
 				slvBox.getPossibles().remove(slvAnswer);
-				// 探索
+				
 				String message = solver(backlog, slvBacklog, slvBox);
 				// 解答に成功した場合、取消前の状態に戻して、次の取消に進む
 				if(message.equals("solved")) {
@@ -104,7 +104,7 @@ public class Factory extends FieldSolver{
 					rollback(backlog, field);
 					break;
 				}
-				// 解答できなかった場合、取消後探索前の状態戻して、次の探索可能マスに進む
+				// 解答できなかった場合、取消後探索前の状態に戻して、次の探索可能マスに進む
 				if(message.equals("contradicted")) {
 					rollback(backlog, field);
 					rollback(slvBacklog, backlog);
